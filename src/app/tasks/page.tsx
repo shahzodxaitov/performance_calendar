@@ -1,84 +1,172 @@
-import { TaskModal } from "@/components/TaskModal";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MoreHorizontal, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
+"use client";
 
-const MOCK_TASKS = [
-  { id: 1, title: "Safia SMM Postlar tayyorlash", type: "SMM", client: "Safia Bakery", assignee: "Alisher", deadline: "2026-03-20", status: "Jarayonda" },
-  { id: 2, title: "Akay City Instagram Reels montaj", type: "Video", client: "Akay City", assignee: "Bobur", deadline: "2026-03-18", status: "Kechikkan" },
-  { id: 3, title: "Loretto Logo redizayn va brandbook", type: "Design", client: "Loretto", assignee: "Sarvar", deadline: "2026-03-25", status: "Rejada" },
-  { id: 4, title: "Muxlis Porshen uchun Target yozish", type: "Reklama", client: "Muxlis Porshen", assignee: "Zarina", deadline: "2026-03-19", status: "Bajarilgan" },
-  { id: 5, title: "Ekskluziv mebel katalok dizayni", type: "Design", client: "Ekskluziv", assignee: "Sarvar", deadline: "2026-03-22", status: "Jarayonda" },
-];
+import { useAuth } from "@/context/AuthContext";
+import { useCompany } from "@/context/CompanyContext";
+import { useEffect, useState, useCallback } from "react";
+import { Plus, Search, Clock, AlertCircle, CheckCircle2, MoreHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { TaskModal } from "@/components/TaskModal";
+
+const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+  todo: { label: "Kutishda", color: "var(--muted-foreground)", icon: Clock },
+  in_progress: { label: "Jarayonda", color: "var(--accent-blue)", icon: Clock },
+  review: { label: "Tekshiruv", color: "var(--accent-orange)", icon: AlertCircle },
+  done: { label: "Bajarildi", color: "var(--accent-green)", icon: CheckCircle2 },
+};
+
+const priorityLabel: Record<string, string> = {
+  low: "🟢", normal: "🟡", high: "🟠", urgent: "🔴",
+};
+
+interface LocalTask {
+  id: string;
+  title: string;
+  description?: string;
+  company_id: string;
+  company_name: string;
+  assignee_id: string;
+  assignee_name: string;
+  status: "todo" | "in_progress" | "review" | "done";
+  priority: "low" | "normal" | "high" | "urgent";
+  due_date: string;
+  due_time?: string;
+}
 
 export default function TasksPage() {
-  return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Ishlar Ro'yxati</h1>
-          <p className="text-muted-foreground text-sm">Barcha ishlarni shu yerdan boshqaring va kuzatasiz.</p>
-        </div>
-        <TaskModal />
-      </div>
+  const { role } = useAuth();
+  const { selectedCompany, isAll } = useCompany();
+  const [tasks, setTasks] = useState<LocalTask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-      <div className="glass-panel border-white/5 rounded-2xl overflow-hidden flex-1 flex flex-col">
-        <div className="flex-1 overflow-auto">
-          <Table>
-            <TableHeader className="bg-black/40 border-b border-white/5 sticky top-0 z-10 backdrop-blur-md">
-              <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="w-[350px] text-muted-foreground font-medium h-12 uppercase tracking-wider text-[11px]">Ish nomi</TableHead>
-                <TableHead className="text-muted-foreground font-medium h-12 uppercase tracking-wider text-[11px]">Turi</TableHead>
-                <TableHead className="text-muted-foreground font-medium h-12 uppercase tracking-wider text-[11px]">Mijoz</TableHead>
-                <TableHead className="text-muted-foreground font-medium h-12 uppercase tracking-wider text-[11px]">Bajaruvchi</TableHead>
-                <TableHead className="text-muted-foreground font-medium h-12 uppercase tracking-wider text-[11px]">Deadline</TableHead>
-                <TableHead className="text-muted-foreground font-medium h-12 uppercase tracking-wider text-[11px]">Status</TableHead>
-                <TableHead className="text-right text-muted-foreground font-medium h-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {MOCK_TASKS.map((task) => (
-                <TableRow key={task.id} className="border-b border-white/5 hover:bg-white/[0.03] transition-colors group">
-                  <TableCell className="font-medium text-white/90 py-5">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-muted-foreground border border-white/5 group-hover:scale-105 group-hover:border-primary/20 group-hover:text-primary transition-all">
-                        <FileText className="w-4 h-4" />
-                      </div>
-                      <span className="truncate">{task.title}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{task.type}</TableCell>
-                  <TableCell className="text-muted-foreground text-sm">{task.client}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary/80 to-blue-500/80 flex items-center justify-center text-[10px] text-white font-bold border border-white/10 shadow-sm">
-                        {task.assignee[0]}
-                      </div>
-                      <span className="text-white/80 text-sm">{task.assignee}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-white/80 text-sm whitespace-nowrap">{task.deadline}</TableCell>
-                  <TableCell>
-                    <span className={`text-[10px] px-2.5 py-1.5 rounded-full font-bold uppercase tracking-wider ${
-                        task.status === "Bajarilgan" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                        task.status === "Jarayonda" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
-                        task.status === "Kechikkan" ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" :
-                        "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                      }`}>
-                        {task.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+  const fetchTasks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}`);
+      const data = await res.json();
+      if (data.tasks) setTasks(data.tasks);
+    } catch {
+      setTasks([]);
+    }
+    setLoading(false);
+  }, [selectedCompany.id]);
+
+  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  function getInitials(name: string) {
+    if (!name) return "?";
+    return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
+  }
+
+  const filtered = search
+    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()) || t.assignee_name.toLowerCase().includes(search.toLowerCase()))
+    : tasks;
+
+  return (
+    <div className="space-y-8 animate-in">
+      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+
+      {/* Header */}
+      <section className="flex items-end justify-between">
+        <div>
+          <h1 className="text-[32px] font-semibold text-white tracking-tight">
+            {isAll ? "Ishlar" : `${selectedCompany.name} Ishlari`}
+          </h1>
+          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">
+            {filtered.length} ta vazifa{!isAll && ` · ${selectedCompany.name}`}
+          </p>
         </div>
-      </div>
+        {(role === "admin" || role === "manager") && (
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary">
+            <Plus className="w-4 h-4" /> Yangi vazifa
+          </button>
+        )}
+      </section>
+
+      {/* Search */}
+      <section className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-[400px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
+          <input
+            value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="Vazifa yoki bajaruvchi qidiruv..."
+            className="w-full h-[38px] pl-9 pr-4 rounded-[10px] bg-white/[0.04] border border-white/[0.06] text-[13px] text-white placeholder:text-[var(--muted-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]/40 transition-all"
+          />
+        </div>
+      </section>
+
+      {/* Table */}
+      <section className="glass-card overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-white/[0.06]">
+              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Vazifa</th>
+              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Loyiha</th>
+              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Status</th>
+              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Bajaruvchi</th>
+              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Muhlat</th>
+              <th className="w-10"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan={6} className="px-5 py-12 text-center text-[13px] text-[var(--muted-foreground)]">Yuklanmoqda...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-5 py-16 text-center">
+                  <div className="text-[var(--muted-foreground)]">
+                    <div className="text-[40px] mb-3">📋</div>
+                    <div className="text-[15px] font-medium text-white mb-1">Vazifalar topilmadi</div>
+                    <div className="text-[13px]">Yangi vazifa qo'shish uchun yuqoridagi tugmani bosing.</div>
+                  </div>
+                </td>
+              </tr>
+            ) : filtered.map((task) => {
+              const sc = statusConfig[task.status] || statusConfig.todo;
+              const Icon = sc.icon;
+              return (
+                <tr key={task.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors cursor-pointer group">
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px]">{priorityLabel[task.priority] || "🟡"}</span>
+                      <div>
+                        <div className="text-[13px] font-medium text-white group-hover:text-[var(--accent-blue)] transition-colors">{task.title}</div>
+                        {task.description && <div className="text-[11px] text-[var(--muted-foreground)] mt-0.5 max-w-xs truncate">{task.description}</div>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-[13px] text-[var(--muted-foreground)]">{task.company_name || "—"}</td>
+                  <td className="px-5 py-4">
+                    <span className="tag" style={{ color: sc.color, backgroundColor: `color-mix(in srgb, ${sc.color} 12%, transparent)` }}>
+                      <Icon className="w-3 h-3" /> {sc.label}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-white/[0.08] flex items-center justify-center text-[9px] font-semibold text-white">
+                        {getInitials(task.assignee_name)}
+                      </div>
+                      <span className="text-[13px] text-[var(--muted-foreground)]">{task.assignee_name}</span>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="text-[13px] text-[var(--muted-foreground)]">{task.due_date}</div>
+                    {task.due_time && <div className="text-[10px] text-[var(--muted-foreground)]/60">{task.due_time}</div>}
+                  </td>
+                  <td className="px-5 py-4">
+                    {(role === "admin" || role === "manager") && (
+                      <button className="p-1.5 rounded-lg hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 transition-all">
+                        <MoreHorizontal className="w-4 h-4 text-[var(--muted-foreground)]" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
     </div>
   );
 }

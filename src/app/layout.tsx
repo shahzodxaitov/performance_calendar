@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import { Inter, Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
-import { Header } from "@/components/Header";
-import { cn } from "@/lib/utils";
+import { AppShell } from "@/components/AppShell";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
-const inter = Inter({ subsets: ["latin", "cyrillic"] });
+const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: "BPG Ish Kalendari",
+  title: "BPG Agency — Marketing Platform",
   description: "Samarqanddagi BPG marketing agentligi ish boshqaruv tizimi",
 };
 
@@ -20,15 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="uz" className={cn("dark", "font-sans", geist.variable)}>
-      <body className={`${inter.className} antialiased flex h-screen overflow-hidden text-sm`}>
-        <Sidebar />
-        <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-          <Header />
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-0">
-            {children}
-          </div>
-        </main>
+    <html lang="uz" className="dark" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased text-sm bg-black text-white`} suppressHydrationWarning>
+        <AppShell>
+           {children}
+        </AppShell>
       </body>
     </html>
   );

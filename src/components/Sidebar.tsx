@@ -1,65 +1,93 @@
 "use client";
 
+import { LayoutDashboard, Calendar, ClipboardList, TrendingUp, Settings, LogOut, MessageSquare, FileBarChart, Users, FolderKanban } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, CheckSquare, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
-const routes = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Kalendar", href: "/calendar", icon: Calendar },
-  { name: "Ishlar", href: "/tasks", icon: CheckSquare },
+const navItems = [
+  { label: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["admin", "manager", "editor", "client"] },
+  { label: "CRM Live", href: "/crm", icon: TrendingUp, roles: ["admin", "manager", "editor"] },
+  { label: "Hisobotlar", href: "/reports", icon: FileBarChart, roles: ["admin", "manager", "editor"] },
+  { label: "Kalendar", href: "/calendar", icon: Calendar, roles: ["admin", "manager", "editor", "client"] },
+  { label: "Ishlar", href: "/tasks", icon: ClipboardList, roles: ["admin", "manager", "editor", "client"] },
+  { label: "Jamoa", href: "/team", icon: Users, roles: ["admin", "manager", "editor"] },
+  { label: "Loyihalar", href: "/projects", icon: FolderKanban, roles: ["admin", "manager", "editor"] },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { role, signOut } = useAuth();
+
+  const filteredItems = navItems.filter(item => {
+    if (!role) return false;
+    return item.roles.includes(role);
+  });
 
   return (
-    <div className="w-64 h-screen hidden md:flex flex-col glass-panel border-r border-white/5 sticky top-0">
-      <div className="p-6 flex items-center space-x-3">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-blue-500 flex items-center justify-center shadow-lg shadow-primary/30">
-          <span className="text-white font-bold text-xl leading-none">B</span>
+    <aside className="w-[260px] h-full flex flex-col border-r border-white/[0.06] bg-black/40 backdrop-blur-2xl relative z-20">
+      {/* Logo */}
+      <div className="px-7 pt-8 pb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-[10px] bg-[var(--accent-blue)] flex items-center justify-center">
+            <span className="text-white text-[13px] font-bold tracking-tight">P</span>
+          </div>
+          <div>
+            <div className="text-[15px] font-semibold text-white tracking-tight">Performance Agency</div>
+            <div className="text-[11px] text-[var(--muted-foreground)]">Marketing Platform</div>
+          </div>
         </div>
-        <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-          BPG
-        </span>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 mt-4">
-        {routes.map((route) => {
-          const isActive = pathname === route.href || (route.href !== "/" && pathname.startsWith(route.href));
+      {/* Nav */}
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <div className="section-label px-3 pb-2 pt-4">Asosiy</div>
+        {filteredItems.map((item) => {
+          const isActive = pathname === item.href;
           return (
             <Link
-              key={route.href}
-              href={route.href}
+              key={item.href}
+              href={item.href}
               className={cn(
-                "flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden",
-                isActive 
-                  ? "text-white font-medium bg-primary/20 border border-primary/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]" 
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                "flex items-center gap-3 px-3 py-[10px] rounded-[10px] transition-all duration-200 group relative",
+                isActive
+                  ? "bg-white/[0.08] text-white"
+                  : "text-[var(--muted-foreground)] hover:text-white hover:bg-white/[0.04]"
               )}
             >
-              <route.icon 
-                className={cn(
-                  "w-5 h-5 transition-transform duration-300",
-                  isActive ? "text-primary scale-110" : "group-hover:scale-110 group-hover:text-foreground"
-                )} 
-              />
-              <span className="relative z-10">{route.name}</span>
               {isActive && (
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-50 z-0"></div>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-[var(--accent-blue)] rounded-r-full" />
               )}
+              <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-[var(--accent-blue)]" : "group-hover:text-white/70")} />
+              <span className="text-[13px] font-medium">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 mt-auto">
-        <button className="flex items-center space-x-3 px-3 py-3 w-full rounded-xl text-muted-foreground hover:bg-white/5 transition-colors group">
-          <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
-          <span>Sozlamalar</span>
+      {/* Footer */}
+      <div className="p-4 space-y-1 border-t border-white/[0.06]">
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-3 px-3 py-[10px] rounded-[10px] transition-all duration-200",
+            pathname === "/settings"
+              ? "bg-white/[0.08] text-white"
+              : "text-[var(--muted-foreground)] hover:text-white hover:bg-white/[0.04]"
+          )}
+        >
+          <Settings className="w-[18px] h-[18px]" />
+          <span className="text-[13px] font-medium">Sozlamalar</span>
+        </Link>
+        <button
+          onClick={() => signOut()}
+          className="w-full flex items-center gap-3 px-3 py-[10px] rounded-[10px] text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 transition-all duration-200"
+        >
+          <LogOut className="w-[18px] h-[18px]" />
+          <span className="text-[13px] font-medium">Chiqish</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
