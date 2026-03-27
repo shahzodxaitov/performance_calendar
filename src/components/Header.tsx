@@ -28,15 +28,15 @@ export function Header() {
   }, []);
 
   return (
-    <header className="h-[56px] flex items-center justify-between px-8 border-b border-white/[0.06] bg-black/30 backdrop-blur-2xl sticky top-0 z-30 shrink-0">
+    <header className="h-[56px] flex items-center justify-between pl-14 pr-4 md:px-6 border-b border-white/[0.06] bg-black/30 backdrop-blur-2xl sticky top-0 z-30 shrink-0">
       {/* Left: Project Selector + Search */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         {/* Project Selector */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setOpen(!open)}
             className={cn(
-              "flex items-center gap-2 h-[34px] px-3.5 rounded-[10px] border transition-all text-[13px] font-medium",
+              "flex items-center gap-2 h-[34px] px-3 rounded-[10px] border transition-all text-[12px] md:text-[13px] font-medium",
               open
                 ? "bg-white/[0.1] border-[var(--accent-blue)]/40 text-white"
                 : "bg-white/[0.04] border-white/[0.06] text-[var(--muted-foreground)] hover:text-white hover:bg-white/[0.06]"
@@ -47,12 +47,12 @@ export function Header() {
                 {selectedCompany.name.substring(0, 1)}
               </span>
             )}
-            <span className="max-w-[140px] truncate">{selectedCompany.name}</span>
-            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", open && "rotate-180")} />
+            <span className="max-w-[100px] md:max-w-[140px] truncate">{selectedCompany.name}</span>
+            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform shrink-0", open && "rotate-180")} />
           </button>
 
           {open && (
-            <div className="absolute top-[calc(100%+6px)] left-0 w-[220px] py-1.5 rounded-[14px] bg-[#1c1c1e]/95 backdrop-blur-2xl border border-white/[0.08] shadow-2xl shadow-black/50 z-50 animate-in">
+            <div className="absolute top-[calc(100%+6px)] left-0 w-[200px] md:w-[220px] py-1.5 rounded-[14px] bg-[#1c1c1e]/95 backdrop-blur-2xl border border-white/[0.08] shadow-2xl shadow-black/50 z-50 animate-in">
               {companies.map((company) => (
                 <button
                   key={company.id}
@@ -79,8 +79,8 @@ export function Header() {
           )}
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-[280px] w-full">
+        {/* Search — hidden on mobile */}
+        <div className="relative hidden md:block max-w-[260px] w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
           <input
             placeholder="Qidiruv..."
@@ -90,7 +90,7 @@ export function Header() {
       </div>
 
       {/* Right Side */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4 shrink-0">
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setNotifOpen(!notifOpen)}
@@ -104,7 +104,7 @@ export function Header() {
           </button>
 
           {notifOpen && (
-            <div className="absolute top-[calc(100%+6px)] right-0 w-[320px] rounded-[16px] bg-[#1c1c1e]/95 backdrop-blur-3xl border border-white/[0.08] shadow-2xl shadow-black/60 z-50 animate-in overflow-hidden">
+            <div className="absolute top-[calc(100%+6px)] right-0 w-[280px] md:w-[320px] rounded-[16px] bg-[#1c1c1e]/95 backdrop-blur-3xl border border-white/[0.08] shadow-2xl shadow-black/60 z-50 animate-in overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                 <h3 className="text-[13px] font-semibold text-white">Xabarnomalar</h3>
                 <span className="text-[10px] font-medium bg-[var(--accent-blue)] text-white px-2 py-0.5 rounded-full">1 Yangi</span>

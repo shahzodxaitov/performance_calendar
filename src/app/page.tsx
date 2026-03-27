@@ -75,21 +75,21 @@ export default function DashboardPage() {
   const data = companyData[selectedCompany.id] || companyData.all;
 
   return (
-    <div className="space-y-8 animate-in">
+    <div className="space-y-6 animate-in">
       <section>
-        <h1 className="text-[32px] font-semibold text-white tracking-tight leading-tight">
+        <h1 className="text-[24px] md:text-[32px] font-semibold text-white tracking-tight leading-tight">
           {isAll ? "Xush kelibsiz 👋" : selectedCompany.name}
         </h1>
-        <p className="text-[15px] text-[var(--muted-foreground)] mt-1">
+        <p className="text-[13px] md:text-[15px] text-[var(--muted-foreground)] mt-1">
           {isAll ? "Bugungi agentlik faoliyati qisqacha." : `${selectedCompany.name} loyihasi bo'yicha qisqacha.`}
         </p>
       </section>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         {data.stats.map((stat, i) => (
-          <div key={i} className="glass-card p-5 flex flex-col gap-4">
+          <div key={i} className="glass-card p-4 md:p-5 flex flex-col gap-3 md:gap-4">
             <div className="flex items-center justify-between">
-              <div className={cn("w-10 h-10 rounded-[12px] flex items-center justify-center", stat.bg)}>
+              <div className={cn("w-9 h-9 md:w-10 md:h-10 rounded-[12px] flex items-center justify-center", stat.bg)}>
                 <stat.icon className={cn("w-[18px] h-[18px]", stat.color)} />
               </div>
               <span className="text-[12px] font-medium text-[var(--accent-green)]">{stat.change}</span>

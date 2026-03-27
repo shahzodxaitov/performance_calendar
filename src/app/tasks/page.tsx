@@ -68,18 +68,18 @@ export default function TasksPage() {
       <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
 
       {/* Header */}
-      <section className="flex items-end justify-between">
+      <section className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-[32px] font-semibold text-white tracking-tight">
+          <h1 className="text-[24px] md:text-[32px] font-semibold text-white tracking-tight">
             {isAll ? "Ishlar" : `${selectedCompany.name} Ishlari`}
           </h1>
-          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">
+          <p className="text-[13px] md:text-[15px] text-[var(--muted-foreground)] mt-1">
             {filtered.length} ta vazifa{!isAll && ` · ${selectedCompany.name}`}
           </p>
         </div>
         {(role === "admin" || role === "manager") && (
-          <button onClick={() => setIsModalOpen(true)} className="btn-primary">
-            <Plus className="w-4 h-4" /> Yangi vazifa
+          <button onClick={() => setIsModalOpen(true)} className="btn-primary shrink-0">
+            <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Yangi vazifa</span><span className="sm:hidden">Yangi</span>
           </button>
         )}
       </section>
@@ -96,8 +96,47 @@ export default function TasksPage() {
         </div>
       </section>
 
-      {/* Table */}
-      <section className="glass-card overflow-hidden">
+      {/* Mobile Card List */}
+      <section className="md:hidden space-y-3">
+        {loading ? (
+          <div className="glass-card p-8 text-center text-[13px] text-[var(--muted-foreground)]">Yuklanmoqda...</div>
+        ) : filtered.length === 0 ? (
+          <div className="glass-card p-10 text-center">
+            <div className="text-[36px] mb-3">📋</div>
+            <div className="text-[14px] font-medium text-white mb-1">Vazifalar topilmadi</div>
+          </div>
+        ) : filtered.map((task) => {
+          const sc = statusConfig[task.status] || statusConfig.todo;
+          const Icon = sc.icon;
+          return (
+            <div key={task.id} className="glass-card p-4 space-y-3">
+              <div className="flex items-start gap-2 justify-between">
+                <div className="flex items-start gap-2 min-w-0">
+                  <span className="text-[13px] mt-0.5 shrink-0">{priorityLabel[task.priority] || "🟡"}</span>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-white">{task.title}</div>
+                    {task.description && <div className="text-[11px] text-[var(--muted-foreground)] mt-0.5 line-clamp-1">{task.description}</div>}
+                  </div>
+                </div>
+                <span className="tag shrink-0" style={{ color: sc.color, backgroundColor: `color-mix(in srgb, ${sc.color} 12%, transparent)` }}>
+                  <Icon className="w-3 h-3" /> {sc.label}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-white/[0.08] flex items-center justify-center text-[9px] font-semibold text-white shrink-0">{getInitials(task.assignee_name)}</div>
+                  <span className="text-[12px] text-[var(--muted-foreground)]">{task.assignee_name}</span>
+                </div>
+                <div className="text-[11px] text-[var(--muted-foreground)]">{task.due_date}{task.due_time && ` · ${task.due_time}`}</div>
+              </div>
+              {!isAll && <div className="text-[11px] text-[var(--accent-blue)]">{task.company_name}</div>}
+            </div>
+          );
+        })}
+      </section>
+
+      {/* Desktop Table */}
+      <section className="hidden md:block glass-card overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/[0.06]">

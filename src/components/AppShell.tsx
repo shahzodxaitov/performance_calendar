@@ -23,10 +23,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CompanyProvider>
         <div className="flex h-screen overflow-hidden w-full">
           <Sidebar />
-          <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+          <main className="flex-1 flex flex-col h-full overflow-hidden relative min-w-0">
             <Header />
             <div className="flex-1 overflow-y-auto">
-              <div className="max-w-[1400px] mx-auto px-8 py-8">
+              <div className="max-w-[1400px] mx-auto px-4 py-5 md:px-8 md:py-8">
                 {children}
               </div>
             </div>

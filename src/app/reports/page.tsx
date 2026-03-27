@@ -86,16 +86,16 @@ export default function ReportsPage() {
           setActiveTab(newReport.type);
         }}
       />
-      <div className="space-y-8 animate-in">
-        <section className="flex items-end justify-between">
-          <div>
-            <h1 className="text-[32px] font-semibold text-white tracking-tight">
+      <div className="space-y-6 animate-in">
+        <section className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-[24px] md:text-[32px] font-semibold text-white tracking-tight">
               {isAll ? "Hisobotlar" : `${selectedCompany.name} Hisobotlari`}
             </h1>
-            <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Kunlik, haftalik, oylik va maxsus oraliq hisobotlarni yarating.</p>
+            <p className="text-[12px] md:text-[15px] text-[var(--muted-foreground)] mt-1">Kunlik, haftalik, oylik va maxsus oraliq hisobotlar.</p>
           </div>
           {(role === "admin" || role === "manager") && (
-            <button onClick={() => setIsModalOpen(true)} className="btn-primary"><Plus className="w-4 h-4" /> Yangi hisobot</button>
+            <button onClick={() => setIsModalOpen(true)} className="btn-primary shrink-0"><Plus className="w-4 h-4" /> <span className="hidden sm:inline">Yangi hisobot</span><span className="sm:hidden">Yangi</span></button>
           )}
         </section>
 

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PERFORMANCE_ | Aniqlik va samaradorlik marketingi</title>
+  <meta name="description" content="Biz 3D ma'lumotlarni modellashtirish va auditoriyani aniq maqsadli yo'naltirish orqali yuqori tezlikdagi o'sish dvigatellarini quramiz. PERFORMANCE_ - samaradorlik marketingining yangi bosqichi." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="navbar__logo">PERFORMANCE<span>_</span></a>
+      <div class="navbar__links" id="nav-links">
+        <a href="#services">Xizmatlar</a>
+        <a href="#case-studies">Keyslar</a>
+        <a href="#methodology">Metodologiya</a>
+        <a href="#contact">Biz haqimizda</a>
+        <button class="navbar__cta" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Bog'lanishni boshlash</button>
+      </div>
+      <button class="navbar__menu-btn" id="menu-btn" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero" id="hero">
+    <div class="hero__bg">
+      <div class="data-stream"></div>
+      <div class="data-stream"></div>
+      <div class="data-stream"></div>
+      <div class="data-stream"></div>
+      <div class="data-stream"></div>
+      <div class="data-stream"></div>
+    </div>
+    <div class="container">
+      <div class="hero__inner">
+        <div class="hero__content">
+          <div class="hero__eyebrow label-tag">
+            <span class="pulse-dot"></span>
+            Tizim onlayn — v4.0
+          </div>
+          <h1 class="hero__title">
+            ANIQ<br /><span class="accent">MA'LUMOTLAR OQIMI.</span>
+          </h1>
+          <p class="hero__sub">
+            Biz shunchaki reklama bermaymiz. Biz bozorda ustunlik qilish uchun 3D ma'lumotlarni modellashtirish va auditoriyani aniq nishonga olish orqali yuqori tezlikdagi o'sish tizimlarini loyihalashtiramiz.
+          </p>
+          <div class="hero__actions">
+            <button class="btn-primary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">
+              Protokolni ishga tushirish
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+            <button class="btn-secondary" onclick="document.getElementById('case-studies').scrollIntoView({behavior:'smooth'})">
+              Keyslarni ko'rish
+            </button>
+          </div>
+        </div>
+        <div class="hero__visual">
+          <canvas id="particle-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BRAND MARQUEE ========== -->
+  <section class="brand-marquee">
+    <div class="brand-marquee__label">
+      <span class="label-tag"><span class="pulse-dot"></span> Bizga ishonadigan yuqori samarali brendlar</span>
+    </div>
+    <div class="marquee-track">
+      <div class="marquee-track__inner">
+        <span class="marquee-brand">QUANTUM_SYSTEMS</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">APEX_NETWORKS</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">SYNERGY_CORP</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">NEURAL_DYNAMICS</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">CIPHER_LOGIC</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">VERTEX_AI</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">HELIX_DATA</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">ORBIT_MEDIA</span>
+        <span class="marquee-divider">✦</span>
+        <!-- Duplicate for seamless loop -->
+        <span class="marquee-brand">QUANTUM_SYSTEMS</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">APEX_NETWORKS</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">SYNERGY_CORP</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">NEURAL_DYNAMICS</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">CIPHER_LOGIC</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">VERTEX_AI</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">HELIX_DATA</span>
+        <span class="marquee-divider">✦</span>
+        <span class="marquee-brand">ORBIT_MEDIA</span>
+        <span class="marquee-divider">✦</span>
+      </div>
+    </div>
+    <div class="marquee-track marquee-track--reverse">
+      <div class="marquee-track__inner">
+        <span class="marquee-brand">NOVA_FINANCE</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">PRISM_HEALTH</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">FLUX_COMMERCE</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">ZENITH_LABS</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">TITAN_SECURITY</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">ECHO_VENTURES</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">PULSE_ENERGY</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">AXIOM_TECH</span>
+        <span class="marquee-divider">◆</span>
+        <!-- Duplicate for seamless loop -->
+        <span class="marquee-brand">NOVA_FINANCE</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">PRISM_HEALTH</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">FLUX_COMMERCE</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">ZENITH_LABS</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">TITAN_SECURITY</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">ECHO_VENTURES</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">PULSE_ENERGY</span>
+        <span class="marquee-divider">◆</span>
+        <span class="marquee-brand">AXIOM_TECH</span>
+        <span class="marquee-divider">◆</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SERVICES ========== -->
+  <section class="services section-padding" id="services">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="label-tag">
+          <span class="pulse-dot"></span>
+          Asosiy protokollar
+        </div>
+        <h2 class="section-title">O'sish muhandisligi</h2>
+        <p class="section-sub">O'sish muhandisligi ekotizimi: bozorda yetakchilik qilish uchun ishlab chiqilgan ma'lumotlarga asoslangan samaradorlik vositalari arsenali.</p>
+      </div>
+      <div class="services__grid">
+        <!-- Card 1 -->
+        <div class="service-card reveal">
+          <div class="service-card__icon">
+            <span class="material-symbols-outlined">query_stats</span>
+          </div>
+          <h3 class="service-card__title">Ma'lumotlar tahlili</h3>
+          <p class="service-card__desc">Chuqur atributsiya va kanallararo modellashtirish. Biz foydalanuvchi xatti-harakatlarini oldindan bashorat qilish uchun shovqin ichidan aniq signallarni topamiz.</p>
+          <a href="#" class="service-card__link">
+            Protokolni ko'zdan kechirish
+            <span class="material-symbols-outlined">trending_flat</span>
+          </a>
+        </div>
+        <!-- Card 2 -->
+        <div class="service-card reveal">
+          <div class="service-card__icon">
+            <span class="material-symbols-outlined">ads_click</span>
+          </div>
+          <h3 class="service-card__title">Targetlangan reklamalar</h3>
+          <p class="service-card__desc">Meta, Google va yangi tarmoqlarda yuqori aniqlikdagi dasturiy xaridlar va semantik kalit so'zlar bo'yicha targeting.</p>
+          <a href="#" class="service-card__link">
+            Protokolni ko'zdan kechirish
+            <span class="material-symbols-outlined">trending_flat</span>
+          </a>
+        </div>
+        <!-- Card 3 -->
+        <div class="service-card reveal">
+          <div class="service-card__icon">
+            <span class="material-symbols-outlined">speed</span>
+          </div>
+          <h3 class="service-card__title">CRO (Konversiyani optimallashtirish)</h3>
+          <p class="service-card__desc">Neyron tarmoqlari asosidagi issiqlik xaritalari va landing sahifalarini tezkor A/B testdan o'tkazish orqali konversiya darajasini optimallashtirish.</p>
+          <a href="#" class="service-card__link">
+            Protokolni ko'zdan kechirish
+            <span class="material-symbols-outlined">trending_flat</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CASE STUDIES ========== -->
+  <section class="case-studies section-padding" id="case-studies">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="label-tag">
+          <span class="pulse-dot"></span>
+          Tasdiqlangan natijalar
+        </div>
+        <h2 class="section-title">Isbotlangan ta'sir</h2>
+        <p class="section-sub">Yuqori darajadagi korporativ hamkorliklar orqali tasdiqlangan aniq muhandislik asosidagi kengayish.</p>
+      </div>
+      <div class="case-studies__grid">
+        <!-- Metric 1 -->
+        <div class="case-card reveal">
+          <div class="case-card__metric cyan" data-target="188" data-suffix="%" data-prefix="+">+188%</div>
+          <div class="case-card__label">ROI o'sishi</div>
+          <p class="case-card__desc">Xususiy Bayyes atributsiya modellashtirishidan foydalangan holda yirik chakana savdo konglomerati uchun aniq muhandislik asosidagi kengayish.</p>
+        </div>
+        <!-- Metric 2 -->
+        <div class="case-card reveal">
+          <div class="case-card__metric magenta" data-target="42" data-suffix="%" data-prefix="-">-42%</div>
+          <div class="case-card__label">CAC kamayishi</div>
+          <p class="case-card__desc">Etakchi fintex platformasi uchun amalga oshirilgan semantik kalit so'zlarni almashtirish strategiyasi, CACni 42% ga kamaytirdi.</p>
+        </div>
+        <!-- Metric 3 -->
+        <div class="case-card reveal">
+          <div class="case-card__metric violet" data-target="67" data-suffix="%" data-prefix="+">+67%</div>
+          <div class="case-card__label">Mijozlarni ushlab qolish o'sishi</div>
+          <p class="case-card__desc">Mijozlar ketib qolishini kamaytirish uchun global striming xizmati uchun neyron tarmoqlari asosidagi personallashtirish dvigateli joriy etildi.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== METHODOLOGY ========== -->
+  <section class="methodology section-padding" id="methodology">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="label-tag">
+          <span class="pulse-dot"></span>
+          Amalga oshirish tizimi
+        </div>
+        <h2 class="section-title">Metodologiya: Tizimlashtirilgan muvaffaqiyat</h2>
+        <p class="section-sub">Takrorlanuvchi va kengayuvchi bozor ustunligi uchun ishlab chiqilgan uch bosqichli protokol.</p>
+      </div>
+      <div class="methodology__steps">
+        <!-- Step 1 -->
+        <div class="step-card reveal">
+          <div class="step-card__number">01-bosqich</div>
+          <div class="step-card__icon">
+            <span class="material-symbols-outlined">database</span>
+          </div>
+          <h3 class="step-card__title">Ma'lumotlar intellekti</h3>
+          <p class="step-card__desc">Mavjud ma'lumotlar omborlarini to'liq audit qilish va yuqori aniqlikdagi kuzatuv tugunlarini joriy etish.</p>
+        </div>
+        <!-- Step 2 -->
+        <div class="step-card reveal">
+          <div class="step-card__number">02-bosqich</div>
+          <div class="step-card__icon">
+            <span class="material-symbols-outlined">architecture</span>
+          </div>
+          <h3 class="step-card__title">Strategik muhandislik</h3>
+          <p class="step-card__desc">Sizning sohangizga moslashtirilgan maxsus o'sish modellari va auditoriya segmentlari matritsalarini loyihalash.</p>
+        </div>
+        <!-- Step 3 -->
+        <div class="step-card reveal">
+          <div class="step-card__number">03-bosqich</div>
+          <div class="step-card__icon">
+            <span class="material-symbols-outlined">rocket_launch</span>
+          </div>
+          <h3 class="step-card__title">Yuqori tezlikda amalga oshirish</h3>
+          <p class="step-card__desc">Maksimal bozor ustunligi uchun optimallashtirilgan tarmoqlar bo'ylab tezkor sinov va joriy etish.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== LIVE METRICS ========== -->
+  <section class="live-metrics section-padding" id="metrics">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="label-tag">
+          <span class="pulse-dot"></span>
+          Jonli ko'rsatkichlar
+        </div>
+        <h2 class="section-title">JONLI KO'RSATKICHLAR.</h2>
+        <p class="section-sub">Mijozlarimiz tarmog'idan to'plangan real vaqtdagi samaradorlik ko'rsatkichlari.</p>
+      </div>
+      <div class="metrics__grid">
+        <div class="metric-card reveal">
+          <div class="metric-card__value" data-target="2.4" data-suffix=" mlrd+" data-decimal="true">0</div>
+          <div class="metric-card__label"><span class="pulse-dot"></span> Ko'rsatilgan reklamalar</div>
+        </div>
+        <div class="metric-card reveal">
+          <div class="metric-card__value" data-target="340" data-suffix=" mln+" data-decimal="false">0</div>
+          <div class="metric-card__label"><span class="pulse-dot"></span> Yaratilgan daromad</div>
+        </div>
+        <div class="metric-card reveal">
+          <div class="metric-card__value" data-target="98.7" data-suffix="%" data-decimal="true">0</div>
+          <div class="metric-card__label"><span class="pulse-dot"></span> Ishchi holat (Uptime)</div>
+        </div>
+        <div class="metric-card reveal">
+          <div class="metric-card__value" data-target="156" data-suffix="+" data-decimal="false">0</div>
+          <div class="metric-card__label"><span class="pulse-dot"></span> Faol kampaniyalar</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CTA SECTION ========== -->
+  <section class="cta-section section-padding" id="contact">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="label-tag">
+          <span class="pulse-dot"></span>
+          Ketma-ketlikni boshlash
+        </div>
+        <h2 class="section-title">BOZORDAGI ULUSHINGIZNI TA'MINLANG.</h2>
+      </div>
+      <div class="cta__inner">
+        <!-- Benefits -->
+        <div class="cta__benefits reveal">
+          <div class="benefit-item">
+            <div class="benefit-item__icon">
+              <span class="material-symbols-outlined">verified</span>
+            </div>
+            <div>
+              <h4 class="benefit-item__title">Bepul ma'lumotlar auditi</h4>
+              <p class="benefit-item__desc">Biz sizning joriy tizimingizni ko'zdan kechiramiz va 48 soat ichida kamchiliklarni topamiz.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-item__icon">
+              <span class="material-symbols-outlined">verified</span>
+            </div>
+            <div>
+              <h4 class="benefit-item__title">Maxsus o'sish rejasi</h4>
+              <p class="benefit-item__desc">Sizning sohangizga mo'ljallangan taktik harakatlar rejasi.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-item__icon">
+              <span class="material-symbols-outlined">verified</span>
+            </div>
+            <div>
+              <h4 class="benefit-item__title">Muhandislarga to'g'ridan-to'g'ri bog'lanish</h4>
+              <p class="benefit-item__desc">Menejerlarni chetlab o'ting. Ma'lumotlar modellarini qurayotgan mutaxassislar bilan bevosita ishlang.</p>
+            </div>
+          </div>
+        </div>
+        <!-- Form -->
+        <form class="cta__form reveal" onsubmit="event.preventDefault(); alert('Bog\'lanish boshlandi. Jamoamiz 48 soat ichida siz bilan bog\'lanadi.');">
+          <h3 class="cta__form-title">Bog'lanishni boshlash</h3>
+          <p class="cta__form-sub">
+            <span class="material-symbols-outlined">lock</span>
+            MATRIX_SECURE_v4.0 orqali shifrlangan aloqa
+          </p>
+          <div class="form-group">
+            <label for="name">Foydalanuvchi ismi</label>
+            <input type="text" id="name" placeholder="To'liq ismingiz" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Xavfsiz kanal (Email)</label>
+            <input type="email" id="email" placeholder="elektron@pochtangiz.com" required />
+          </div>
+          <div class="form-group">
+            <label for="company">Tashkilot</label>
+            <input type="text" id="company" placeholder="Kompaniya nomi" />
+          </div>
+          <div class="form-group">
+            <label for="message">Vazifa tafsilotlari</label>
+            <textarea id="message" placeholder="O'sish maqsadlaringizni tasvirlab bering..."></textarea>
+          </div>
+          <button type="submit" class="btn-primary form-submit">
+            Ma'lumotlarni yuborish
+            <span class="material-symbols-outlined">send</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="#" class="navbar__logo">PERFORMANCE<span>_</span></a>
+          <p class="footer__brand-desc">Samaradorlik marketingining yangi bosqichi. Ma'lumotlarga asoslangan, tezkorlik bilan ishlovchi, ustunlik uchun optimallashtirilgan.</p>
+        </div>
+        <div class="footer__col">
+          <h5 class="footer__col-title">Tarmoq</h5>
+          <div class="footer__col-links">
+            <a href="#" target="_blank">LinkedIn</a>
+            <a href="#" target="_blank">Twitter</a>
+            <a href="#" target="_blank">Instagram</a>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h5 class="footer__col-title">Tugunlar</h5>
+          <div class="footer__col-links">
+            <a href="#">Ofis: Nyu-York</a>
+            <a href="#">Ofis: London</a>
+            <a href="#">Yangiliklar</a>
+          </div>
+        </div>
+        <div class="footer__col">
+          <h5 class="footer__col-title">Protokol</h5>
+          <div class="footer__col-links">
+            <a href="#services">Xizmatlar</a>
+            <a href="#case-studies">Keyslar</a>
+            <a href="#methodology">Metodologiya</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p class="footer__copy">&copy; 2026 <a href="#">PERFORMANCE_</a>. Barcha tizimlar ishchi holatda.</p>
+        <div class="footer__legal">
+          <a href="#">Maxfiylik protokoli</a>
+          <a href="#">Xizmat ko'rsatish shartlari</a>
+          <a href="#">Cookie-fayllar matritsasi</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
