@@ -65,17 +65,16 @@ async function answerCallback(callbackId: string, text?: string) {
 }
 
 // /start buyrug'i
-function getStartMessage(name: string) {
+function getStartMessage(name: string, chatId: number) {
   return `👋 <b>Xush kelibsiz, ${name}!</b>
 
-Bu <b>BPG Agency</b> marketing platformasining rasmiy botidir.
+Bu <b>Performance Agency</b> marketing platformasining rasmiy botidir.
 
-📊 Bot orqali quyidagilarni olishingiz mumkin:
-• Kunlik/haftalik/oylik hisobotlar
-• Loyiha bo'yicha statistika
-• Hisobot linklari
+🔑 <b>Sizning Chat ID raqamingiz:</b> <code>${chatId}</code>
 
-👇 Quyidagi tugmalarni bosing:`;
+<i>Bildirishnomalar qabul qilish uchun platformaga kiring: Jamoa (yoki Sozlamalar) bo'limida ushbu Chat ID raqamini o'z ismingiz yoniga kiriting. Shundan so'ng barcha yangi vazifalar sizga keladi.</i>
+
+👇 Boshqa buyruqlar:`;
 }
 
 function getMainKeyboard() {
@@ -136,7 +135,7 @@ export async function POST(request: NextRequest) {
       const name = update.message.from?.first_name || "Foydalanuvchi";
 
       if (text === "/start") {
-        await sendMessage(chatId, getStartMessage(name), { reply_markup: getMainKeyboard() });
+        await sendMessage(chatId, getStartMessage(name, chatId), { reply_markup: getMainKeyboard() });
       } else if (text === "/hisobot" || text === "/report") {
         await sendMessage(chatId, "📊 Qaysi loyiha bo'yicha hisobot kerak?", {
           reply_markup: getCompanyKeyboard("report"),

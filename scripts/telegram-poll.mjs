@@ -113,24 +113,16 @@ async function handleUpdate(update) {
     console.log(`📩 ${name} (${chatId}): ${text}`);
 
     if (text === "/start") {
-      // API dan chat_id ni izlaymiz
-      const tRes = await fetch(`${APP_URL}/api/team`);
-      const tData = await tRes.json();
-      const member = (tData.team || []).find(m => m.chat_id === chatId);
+      const greeting = `👋 <b>Xush kelibsiz, ${name}!</b>\n\nBu <b>Performance Agency</b> marketing platformasining botidir.`;
+      const msg = `${greeting}
 
-      const greeting = member
-        ? `👋 <b>Xush kelibsiz, ${member.full_name}!</b>\n\nSiz platformaga ulangansiz ✅`
-        : `👋 <b>Xush kelibsiz, ${name}!</b>\n\nBu <b>Performance Agency</b> marketing platformasining botidir.`;
+🔑 <b>Sizning Chat ID raqamingiz:</b> <code>${chatId}</code>
 
-      await sendMessage(chatId,
-        `${greeting}\n\n📊 Hisobotlar, vazifalar va statistikani oling.\n📨 Yangi vazifalar avtomatik bot orqali keladi.\n\n${!member ? "👤 Avval o'zingizni ro'yxatdan o'tkazing: /connect" : ""}\n\n👇 Quyidagi tugmalarni bosing:`,
-        getMainKeyboard()
-      );
-    } else if (text === "/connect") {
-      await sendMessage(chatId,
-        `👤 <b>Ro'yxatdan o'tish</b>\n\nO'zingizni tanlang (Admin qoshgan ismlar):`,
-        await getTeamKeyboard()
-      );
+<i>Bildirishnomalar qabul qilish uchun platformaga kiring: Sozlamalar bo'limida ushbu Chat ID raqamini kiriting. Shundan so'ng barcha yangi vazifalar sizga keladi.</i>
+
+👇 Quyidagi yordamchi tugmalarni bosing:`;
+
+      await sendMessage(chatId, msg, getMainKeyboard());
     } else if (text === "/hisobot" || text === "/report") {
       await sendMessage(chatId, "📊 Qaysi loyiha?", getCompanyKeyboard("report"));
     } else if (text === "/stats") {
