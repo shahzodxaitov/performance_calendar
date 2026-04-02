@@ -79,47 +79,73 @@ export interface AppData {
   reports: ReportData[];
 }
 
-function getDbPath() {
-  return path.join(process.cwd(), "data", "db.json");
+// ========== IN-MEMORY STORE ==========
+// Vercel serverless muhitida fayl tizimga yozib bo'lmaydi.
+// Shuning uchun hamma ma'lumotlar xotirada (RAM) saqlanadi.
+// Birinchi murojaatda db.json faylidan o'qiladi (seed),
+// keyin barcha o'zgarishlar xotirada bo'ladi.
+
+let memoryDb: AppData | null = null;
+
+function getDefaultData(): AppData {
+  return {
+    team: [],
+    tasks: [],
+    companies: [
+      { id: "c1", name: "Mondelux", token: "mondelux" },
+      { id: "c2", name: "Chinar Group", token: "chinar" },
+      { id: "c3", name: "Sunnat Umra", token: "sunnat" },
+    ],
+    leads: [],
+    reports: [],
+  };
 }
 
-export function readDb(): AppData {
+function loadFromDisk(): AppData {
   try {
-    const dbPath = getDbPath();
-    if (!fs.existsSync(dbPath)) {
-      return { team: [], tasks: [], companies: [], leads: [], reports: [] };
+    const dbPath = path.join(process.cwd(), "data", "db.json");
+    if (fs.existsSync(dbPath)) {
+      const raw = fs.readFileSync(dbPath, "utf-8");
+      const parsed = JSON.parse(raw);
+      // Ensure all arrays exist
+      if (!parsed.companies) {
+        parsed.companies = getDefaultData().companies;
+      }
+      if (!parsed.leads) parsed.leads = [];
+      if (!parsed.reports) parsed.reports = [];
+      if (!parsed.tasks) parsed.tasks = [];
+      if (!parsed.team) parsed.team = [];
+      return parsed;
     }
-    const data = fs.readFileSync(dbPath, "utf-8");
-    const parsed = JSON.parse(data);
-    if (!parsed.companies) {
-      parsed.companies = [
-        { id: "c1", name: "Mondelux", token: "mondelux" },
-        { id: "c2", name: "Chinar Group", token: "chinar" },
-        { id: "c3", name: "Sunnat Umra", token: "sunnat" },
-      ];
-    }
-    if (!parsed.leads) {
-      parsed.leads = [];
-    }
-    if (!parsed.reports) {
-      parsed.reports = [];
-    }
-    return parsed;
   } catch (err) {
-    console.error("DB o'qishda xatolik:", err);
-    return { team: [], tasks: [], companies: [], leads: [], reports: [] };
+    console.error("DB fayldan yuklashda xatolik:", err);
   }
+  return getDefaultData();
 }
 
-export function writeDb(data: AppData) {
+function tryWriteToDisk(data: AppData) {
+  // Agar fayl tizimga yoza olsak — yozamiz (localhost uchun)
+  // Vercel'da silently fail bo'ladi
   try {
-    const dbPath = getDbPath();
+    const dbPath = path.join(process.cwd(), "data", "db.json");
     const dir = path.dirname(dbPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf-8");
-  } catch (err) {
-    console.error("DB yozishda xatolik:", err);
+  } catch {
+    // Vercel'da bu xatolik — normal holat, skip qilamiz
   }
+}
+
+export function readDb(): AppData {
+  if (!memoryDb) {
+    memoryDb = loadFromDisk();
+  }
+  return memoryDb;
+}
+
+export function writeDb(data: AppData) {
+  memoryDb = data;
+  tryWriteToDisk(data);
 }
 
 export function getTeamMembers() { return readDb().team; }
