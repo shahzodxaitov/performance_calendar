@@ -59,6 +59,20 @@ export async function POST(request: NextRequest) {
     const member = team.find((m) => m.id === assignee_id);
     const assignee_name = member?.full_name || "Noma'lum";
 
+    // Agar Supabase dagi "profiles" ishlayotgan bo'lsa undan chat_id qidirish, bo'lmasa local JSON dan
+    let finalChatId = member?.chat_id;
+    if (!finalChatId && assignee_id.includes("-")) { 
+       // Supabase IDlari odatda UUID (chiziqcha bilan) bo'ladi
+       try {
+         const { createClient } = require('@supabase/supabase-js');
+         if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+            const { data } = await supabase.from("profiles").select("telegram_chat_id").eq("id", assignee_id).single();
+            if (data?.telegram_chat_id) finalChatId = data.telegram_chat_id;
+         }
+       } catch (e) {}
+    }
+
     const newTask: LocalTask = {
       id: `t${Date.now()}`,
       title,
@@ -80,15 +94,15 @@ export async function POST(request: NextRequest) {
     const tasks = getTasks();
     tasks.unshift(newTask);
 
-    if (member?.chat_id) {
+    if (finalChatId) {
       const message = formatTaskMessage(newTask, "new");
-      await sendTelegramNotification(member.chat_id, message);
+      await sendTelegramNotification(finalChatId, message);
       newTask.notified_create = true;
     }
 
     saveTasks(tasks);
 
-    return NextResponse.json({ task: newTask, notified: !!member?.chat_id });
+    return NextResponse.json({ task: newTask, notified: !!finalChatId });
   } catch (error) {
     return NextResponse.json({ error: String(error) }, { status: 500 });
   }

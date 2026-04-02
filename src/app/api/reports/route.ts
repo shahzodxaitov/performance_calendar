@@ -110,6 +110,51 @@ export async function POST(request: NextRequest) {
     reports.push(newReport);
     saveReports(reports);
 
+    // Send Telegram Notification to all connected admins/managers
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+       const { getTeamMembers } = require("@/lib/data-store");
+       const team = getTeamMembers();
+       let chatIds: string[] = [];
+       // Add local chat ids
+       team.forEach((m: any) => {
+          if (m.chat_id && !chatIds.includes(m.chat_id)) chatIds.push(m.chat_id);
+       });
+       
+       // Try fetching all chat_ids from Supabase if configured
+       try {
+         const { createClient } = require('@supabase/supabase-js');
+         if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+            const { data } = await supabase.from("profiles").select("telegram_chat_id").not("telegram_chat_id", "is", null);
+            if (data) {
+               data.forEach((p: any) => {
+                  if (p.telegram_chat_id && !chatIds.includes(p.telegram_chat_id)) chatIds.push(p.telegram_chat_id);
+               });
+            }
+         }
+       } catch(e) {}
+       
+       const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+       const reportUrl = `${APP_URL}/reports/share/${newReport.share_token}`;
+       const message = `📊 <b>Yangi Hisobot Tayyor: ${title}</b>
+🏢 Loyiha: <b>${company.name}</b>
+📅 Sana: ${newReport.subtitle}
+    
+💼 Leads: <b>${newReport.data.leads} ta</b>
+💰 Sotuvlar: <b>${newReport.data.sales}</b>
+✅ Bajarilgan ishlar: <b>${newReport.data.done} ta</b>
+
+Maketni yuklab oling yoki ko'ring:\n🔗 ${reportUrl}`;
+
+       for (const cid of chatIds) {
+          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
+          }).catch(() => {});
+       }
+    }
+
     return NextResponse.json({ success: true, report: newReport });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

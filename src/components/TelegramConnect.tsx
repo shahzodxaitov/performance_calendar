@@ -11,15 +11,31 @@ export function TelegramConnect() {
   const [success, setSuccess] = useState(false);
 
   const handleConnect = async () => {
-    if (!user || !chatId) return;
+    if (!chatId) return;
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({ telegram_chat_id: chatId })
-      .eq("id", user.id);
+    if (user) {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ telegram_chat_id: chatId })
+        .eq("id", user.id);
 
-    if (!error) {
-      setSuccess(true);
+      if (!error) {
+        setSuccess(true);
+      }
+    } else {
+      // Demo rejimida barcha jamoa a'zolariga Chat ID kiritamiz (test uchun qulaylik)
+      const res = await fetch("/api/team");
+      const data = await res.json();
+      if (data.team) {
+        for (const m of data.team) {
+          await fetch("/api/team", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: m.id, chat_id: chatId }),
+          });
+        }
+        setSuccess(true);
+      }
     }
   };
 
