@@ -4,7 +4,7 @@ import { getTeamMembers, saveTeamMembers, getCompanies } from "@/lib/data-store"
 
 export const dynamic = "force-dynamic";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://performance-calendar.vercel.app";
 
 // ===== TELEGRAM HELPERS =====

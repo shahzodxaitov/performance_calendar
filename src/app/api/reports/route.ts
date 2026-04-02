@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
     saveReports(reports);
 
     // Send Telegram Notification to all connected admins/managers
-    if (process.env.TELEGRAM_BOT_TOKEN) {
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+    if (BOT_TOKEN) {
        const { getTeamMembers } = require("@/lib/data-store");
        const team = getTeamMembers();
        let chatIds: string[] = [];
