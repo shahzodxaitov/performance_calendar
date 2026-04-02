@@ -43,7 +43,7 @@ export default function TasksPage() {
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}`);
+      const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}&t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.tasks) setTasks(data.tasks);
     } catch {

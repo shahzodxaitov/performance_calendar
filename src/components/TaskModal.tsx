@@ -35,7 +35,7 @@ export function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      fetch("/api/team")
+      fetch(`/api/team?t=${Date.now()}`, { cache: "no-store" })
         .then(res => res.json())
         .then(data => {
           if (data.team) setTeamMembers(data.team);

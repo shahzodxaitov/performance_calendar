@@ -27,7 +27,7 @@ export default function TeamPage() {
   const fetchTeam = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/team");
+      const res = await fetch(`/api/team?t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.team) setTeam(data.team);
     } catch {
