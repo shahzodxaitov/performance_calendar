@@ -67,6 +67,22 @@ export default function TeamPage() {
     }
   };
 
+  const handleUpdateChatId = async (id: string, current: string | null) => {
+    const newId = prompt("Foydalanuvchining Telegram Chat ID raqamini kiriting:\n(Buni ular botga /start deb yozganda bilib olishadi)", current || "");
+    if (newId !== null && newId.trim() !== current) {
+      try {
+        await fetch("/api/team", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, chat_id: newId.trim() }),
+        });
+        fetchTeam();
+      } catch {
+        alert("Xatolik");
+      }
+    }
+  };
+
   function getInitials(name: string) {
     return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
   }
@@ -152,15 +168,22 @@ export default function TeamPage() {
                   <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-white/[0.06] text-white capitalize">{member.role}</span>
                 </td>
                 <td className="px-5 py-4">
-                  {member.chat_id ? (
-                    <div className="flex items-center gap-2 text-[12px] text-[var(--accent-green)]">
-                      <CheckCircle2 className="w-4 h-4" /> Ulangan
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 text-[12px] text-[var(--muted-foreground)]">
-                      <XCircle className="w-4 h-4 text-white/20" /> Ulanmagan
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {member.chat_id ? (
+                      <span className="flex items-center gap-1.5 text-[12px] text-[var(--accent-green)]">
+                        <CheckCircle2 className="w-4 h-4" /> Ulangan ({member.chat_id})
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-[12px] text-[var(--muted-foreground)]">
+                        <XCircle className="w-4 h-4 text-white/20" /> Yo'q
+                      </span>
+                    )}
+                    {role === "admin" && (
+                      <button onClick={() => handleUpdateChatId(member.id, member.chat_id)} className="text-[11px] text-[var(--accent-blue)] hover:underline ml-2">
+                        Tahrirlash
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-4">
                   {role === "admin" && (
