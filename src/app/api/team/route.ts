@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTeamMembers, saveTeamMembers, type TeamMember } from "@/lib/data-store";
 
+export const dynamic = "force-dynamic";
+
 const colors = ["#0071e3", "#bf5af2", "#30d158", "#ff9f0a", "#ff375f", "#34c759", "#af52de"];
 
 // GET - Barcha jamoa a'zolarini o'qish

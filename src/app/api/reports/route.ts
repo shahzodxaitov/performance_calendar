@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReports, saveReports, getCompanies, getTasks, getLeads, ReportData } from "@/lib/data-store";
+import { getReports, saveReports, getCompanies, getTasks, getLeads, type ReportData } from "@/lib/data-store";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

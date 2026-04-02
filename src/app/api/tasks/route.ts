@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTasks, saveTasks, getTeamMembers, type LocalTask } from "@/lib/data-store";
 
+export const dynamic = "force-dynamic";
+
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
 async function sendTelegramNotification(chatId: string, text: string) {
