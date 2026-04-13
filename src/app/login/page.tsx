@@ -65,10 +65,17 @@ export default function LoginPage() {
                 required
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Kirish..." : "Kirish"}
-            </Button>
+            <div className="space-y-4 pt-2">
+              <Button type="submit" className="w-full bg-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/90 text-white py-6" disabled={loading}>
+                {loading ? "Kirish..." : "Kirish"}
+              </Button>
+              <p className="text-sm text-center text-white/60">
+                Profilingiz yo'qmi?{" "}
+                <Link href="/register" className="text-[var(--accent-blue)] hover:underline">
+                  Ro'yxatdan o'tish
+                </Link>
+              </p>
+            </div>
           </form>
         </CardContent>
       </Card>

@@ -26,9 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Supabase sozlanmagan bo'lsa — demo rejimda ishlash
     if (!isSupabaseConfigured) {
-      setRole("admin"); // Demo uchun admin
       setLoading(false);
       return;
     }

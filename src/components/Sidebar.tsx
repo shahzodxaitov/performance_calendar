@@ -8,13 +8,13 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["admin", "manager", "editor", "client"] },
-  { label: "CRM Live", href: "/crm", icon: TrendingUp, roles: ["admin", "manager", "editor"] },
-  { label: "Hisobotlar", href: "/reports", icon: FileBarChart, roles: ["admin", "manager", "editor"] },
-  { label: "Kalendar", href: "/calendar", icon: Calendar, roles: ["admin", "manager", "editor", "client"] },
-  { label: "Ishlar", href: "/tasks", icon: ClipboardList, roles: ["admin", "manager", "editor", "client"] },
-  { label: "Jamoa", href: "/team", icon: Users, roles: ["admin", "manager", "editor"] },
-  { label: "Loyihalar", href: "/projects", icon: FolderKanban, roles: ["admin", "manager", "editor"] },
+  { label: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["admin", "manager", "editor"] },
+  { label: "CRM Live", href: "/crm", icon: TrendingUp, roles: ["admin", "manager"] },
+  { label: "Hisobotlar", href: "/reports", icon: FileBarChart, roles: ["admin", "manager"] },
+  { label: "Kalendar", href: "/calendar", icon: Calendar, roles: ["admin", "manager", "editor"] },
+  { label: "Ishlar", href: "/tasks", icon: ClipboardList, roles: ["admin", "manager", "editor"] },
+  { label: "Jamoa", href: "/team", icon: Users, roles: ["admin", "manager"] },
+  { label: "Loyihalar", href: "/projects", icon: FolderKanban, roles: ["admin", "manager"] },
 ];
 
 function NavContent({ onClose }: { onClose?: () => void }) {
@@ -75,19 +75,21 @@ function NavContent({ onClose }: { onClose?: () => void }) {
 
       {/* Footer */}
       <div className="p-3 space-y-0.5 border-t border-white/[0.06]">
-        <Link
-          href="/settings"
-          onClick={onClose}
-          className={cn(
-            "flex items-center gap-3 px-3 py-[10px] rounded-[10px] transition-all duration-200",
-            pathname === "/settings"
-              ? "bg-white/[0.08] text-white"
-              : "text-[var(--muted-foreground)] hover:text-white hover:bg-white/[0.04]"
-          )}
-        >
-          <Settings className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Sozlamalar</span>
-        </Link>
+        {role === "admin" && (
+          <Link
+            href="/settings"
+            onClick={onClose}
+            className={cn(
+              "flex items-center gap-3 px-3 py-[10px] rounded-[10px] transition-all duration-200",
+              pathname === "/settings"
+                ? "bg-white/[0.08] text-white"
+                : "text-[var(--muted-foreground)] hover:text-white hover:bg-white/[0.04]"
+            )}
+          >
+            <Settings className="w-[18px] h-[18px]" />
+            <span className="text-[13px] font-medium">Sozlamalar</span>
+          </Link>
+        )}
         <button
           onClick={() => { signOut(); onClose?.(); }}
           className="w-full flex items-center gap-3 px-3 py-[10px] rounded-[10px] text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 transition-all duration-200"
