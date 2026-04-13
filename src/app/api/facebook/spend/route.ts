@@ -53,19 +53,12 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // SIMULATION (Mock Data based on company ID) if NO TOKEN is provided
-  const hash = parseInt(companyId.replace(/\D/g, '') || "123", 10);
-  let mockSpend = 12.5 + (hash % 15);
-  if (period === "weekly") mockSpend *= 7;
-  if (period === "monthly") mockSpend *= 30;
-  const mockCpc = 0.15 + ((hash % 10) / 100);
-  const mockCpm = 2.5 + ((hash % 5) / 10);
-
+  // No simulation, return 0 if no token or integration
   return NextResponse.json({
-    spend: parseFloat(mockSpend.toFixed(2)),
+    spend: 0,
     currency: "USD",
-    cpc: parseFloat(mockCpc.toFixed(2)),
-    cpm: parseFloat(mockCpm.toFixed(2)),
-    status: "connected" // For frontend it looks the same
+    cpc: 0,
+    cpm: 0,
+    status: "not_connected"
   });
 }

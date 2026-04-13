@@ -13,80 +13,43 @@ const crmByCompany: Record<string, {
 }> = {
   all: {
     stats: [
-      { title: "Jami Leadlar", value: "156", change: "+14%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "28", change: "+6%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "62M", change: "+20%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "19.2%", change: "+3%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
+      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
+      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
+      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
+      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
     ],
-    chart: [
-      { name: "Yan", leads: 25, sales: 10 }, { name: "Fev", leads: 38, sales: 15 }, { name: "Mar", leads: 32, sales: 18 },
-      { name: "Apr", leads: 45, sales: 24 }, { name: "May", leads: 36, sales: 20 }, { name: "Iyn", leads: 42, sales: 28 },
-      { name: "Iyl", leads: 28, sales: 15 }, { name: "Avg", leads: 35, sales: 22 }, { name: "Sen", leads: 50, sales: 32 },
-      { name: "Okt", leads: 40, sales: 25 }, { name: "Noy", leads: 32, sales: 18 }, { name: "Dek", leads: 48, sales: 35 },
-    ],
-    leads: [
-      { name: "Bahrom T.", source: "Instagram", status: "new", time: "5 daqiqa oldin" },
-      { name: "Dilnoza S.", source: "Telegram", status: "contacted", time: "12 daqiqa oldin" },
-      { name: "Jamshid F.", source: "Referral", status: "qualified", time: "1 soat oldin" },
-      { name: "Nodira R.", source: "Instagram", status: "new", time: "2 soat oldin" },
-      { name: "Sardor M.", source: "Direct", status: "contacted", time: "3 soat oldin" },
-    ],
+    chart: [],
+    leads: [],
   },
   c1: {
     stats: [
-      { title: "Jami Leadlar", value: "58", change: "+16%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "12", change: "+4%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "28M", change: "+22%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "22%", change: "+5%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
+      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
+      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
+      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
+      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
     ],
-    chart: [
-      { name: "Yan", leads: 10, sales: 4 }, { name: "Fev", leads: 15, sales: 6 }, { name: "Mar", leads: 12, sales: 7 },
-      { name: "Apr", leads: 18, sales: 10 }, { name: "May", leads: 14, sales: 8 }, { name: "Iyn", leads: 20, sales: 12 },
-      { name: "Iyl", leads: 11, sales: 6 }, { name: "Avg", leads: 16, sales: 9 }, { name: "Sen", leads: 22, sales: 14 },
-      { name: "Okt", leads: 18, sales: 11 }, { name: "Noy", leads: 14, sales: 8 }, { name: "Dek", leads: 20, sales: 15 },
-    ],
-    leads: [
-      { name: "Bahrom T.", source: "Instagram", status: "new", time: "10 daqiqa oldin" },
-      { name: "Madina K.", source: "Telegram", status: "contacted", time: "30 daqiqa oldin" },
-      { name: "Rustam J.", source: "Referral", status: "qualified", time: "2 soat oldin" },
-    ],
+    chart: [],
+    leads: [],
   },
   c2: {
     stats: [
-      { title: "Jami Leadlar", value: "52", change: "+12%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "9", change: "+3%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "20M", change: "+18%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "18%", change: "+3%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
+      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
+      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
+      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
+      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
     ],
-    chart: [
-      { name: "Yan", leads: 8, sales: 3 }, { name: "Fev", leads: 12, sales: 5 }, { name: "Mar", leads: 10, sales: 6 },
-      { name: "Apr", leads: 14, sales: 7 }, { name: "May", leads: 11, sales: 6 }, { name: "Iyn", leads: 13, sales: 8 },
-      { name: "Iyl", leads: 8, sales: 4 }, { name: "Avg", leads: 10, sales: 6 }, { name: "Sen", leads: 16, sales: 10 },
-      { name: "Okt", leads: 12, sales: 7 }, { name: "Noy", leads: 9, sales: 5 }, { name: "Dek", leads: 15, sales: 11 },
-    ],
-    leads: [
-      { name: "Aziz K.", source: "Instagram", status: "new", time: "5 daqiqa oldin" },
-      { name: "Dilnoza S.", source: "Telegram", status: "contacted", time: "1 soat oldin" },
-      { name: "Nodir A.", source: "Direct", status: "new", time: "3 soat oldin" },
-    ],
+    chart: [],
+    leads: [],
   },
   c3: {
     stats: [
-      { title: "Jami Leadlar", value: "46", change: "+10%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "7", change: "+2%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "14M", change: "+15%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "16%", change: "+2%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
+      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
+      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
+      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
+      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
     ],
-    chart: [
-      { name: "Yan", leads: 7, sales: 2 }, { name: "Fev", leads: 11, sales: 4 }, { name: "Mar", leads: 10, sales: 5 },
-      { name: "Apr", leads: 13, sales: 7 }, { name: "May", leads: 11, sales: 6 }, { name: "Iyn", leads: 9, sales: 5 },
-      { name: "Iyl", leads: 9, sales: 5 }, { name: "Avg", leads: 9, sales: 4 }, { name: "Sen", leads: 12, sales: 8 },
-      { name: "Okt", leads: 10, sales: 6 }, { name: "Noy", leads: 9, sales: 5 }, { name: "Dek", leads: 13, sales: 9 },
-    ],
-    leads: [
-      { name: "Jamshid F.", source: "Instagram", status: "qualified", time: "1 soat oldin" },
-      { name: "Sardor M.", source: "Telegram", status: "contacted", time: "4 soat oldin" },
-    ],
+    chart: [],
+    leads: [],
   },
 };
 
@@ -107,7 +70,8 @@ interface Lead {
 
 export default function CRMPage() {
   const { selectedCompany, isAll } = useCompany();
-  const data = crmByCompany[selectedCompany.id] || crmByCompany.all;
+  // Using hardcoded zeroed data as a base/skeleton
+  const fallbackData = crmByCompany[selectedCompany.id] || crmByCompany.all;
   
   const [period, setPeriod] = useState("daily");
   const [fbAds, setFbAds] = useState({ spend: 0, cpc: 0, status: "not_connected" });
@@ -140,11 +104,11 @@ export default function CRMPage() {
 
   // AmoCRM display stats configuration
   const displayStats = [
-    { title: "Jami Leadlar", value: amoStats.total_leads.toString(), change: "+8%", trend: "up", icon: Users, color: "#0071e3" },
-    { title: "Sifatli Leadlar", value: amoStats.qualified_leads.toString(), change: "+4%", trend: "up", icon: Target, color: "#bf5af2" },
-    { title: "Sifatli Konversiya", value: amoStats.total_leads > 0 ? Math.round((amoStats.qualified_leads / amoStats.total_leads) * 100) + "%" : "0%", change: "+2%", trend: "up", icon: TrendingUp, color: "#34c759" },
-    { title: "Uchrashuv (Visit)", value: amoStats.visits.toString(), change: "+12%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
-    { title: "Sotuvlar", value: amoStats.sales_amount > 1000000 ? (amoStats.sales_amount / 1000000).toFixed(1) + "M" : amoStats.sales_amount.toLocaleString(), change: "+5%", trend: "up", icon: DollarSign, color: "#30d158" }
+    { title: "Jami Leadlar", value: amoStats.total_leads.toString(), change: "0%", trend: "up", icon: Users, color: "#0071e3" },
+    { title: "Sifatli Leadlar", value: amoStats.qualified_leads.toString(), change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
+    { title: "Sifatli Konversiya", value: amoStats.total_leads > 0 ? Math.round((amoStats.qualified_leads / amoStats.total_leads) * 100) + "%" : "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#34c759" },
+    { title: "Uchrashuv (Visit)", value: amoStats.visits.toString(), change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
+    { title: "Sotuvlar", value: amoStats.sales_amount > 1000000 ? (amoStats.sales_amount / 1000000).toFixed(1) + "M" : amoStats.sales_amount.toLocaleString() + " UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" }
   ];
 
   const newLeadsCount = realLeads.filter(l => l.status === "Yangi").length;

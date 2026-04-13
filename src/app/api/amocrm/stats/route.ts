@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   };
 
   if (companyId === "all") {
-     stats = { total_leads: 184, qualified_leads: 62, visits: 21, sales_amount: 45000000, chart: [], status: "mock" };
+     stats = { total_leads: 0, qualified_leads: 0, visits: 0, sales_amount: 0, chart: [], status: "mock" };
      return NextResponse.json(stats);
   }
 
@@ -131,15 +131,14 @@ export async function GET(request: NextRequest) {
       stats.status = "error_fetching";
     }
   } else {
-    // Fake data for disconnected companies
-    const base = (company?.name.length || 5) * 5;
+    // No mock data for disconnected companies
     stats = {
-      total_leads: base,
-      qualified_leads: Math.floor(base * 0.4),
-      visits: Math.floor(base * 0.1),
-      sales_amount: base * 150000,
+      total_leads: 0,
+      qualified_leads: 0,
+      visits: 0,
+      sales_amount: 0,
       chart: [],
-      status: "mock"
+      status: "not_connected"
     };
   }
 

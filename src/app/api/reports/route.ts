@@ -94,19 +94,11 @@ export async function POST(request: NextRequest) {
       }
     };
     
-    // Mock robust values to make report look good even with empty data
-    if (totalLeads === 0) {
-      newReport.data.leads = Math.floor(Math.random() * 20) + 5;
-      newReport.data.source = "Instagram";
-      newReport.data.done = Math.floor(Math.random() * 5) + 5;
-      newReport.data.total = 10;
-    }
-    
-    const fakeSales = Math.floor(Math.random() * 15) + 1;
-    newReport.data.sales = `${fakeSales}M UzS`;
-    newReport.data.leads_ch = `+${Math.floor(Math.random() * 20) + 1}%`;
-    newReport.data.sales_ch = `+${Math.floor(Math.random() * 20) + 5}%`;
-    newReport.data.conversion_ch = `+${Math.floor(Math.random() * 5) + 1}%`;
+    // Calculate real changes or use 0% as default
+    newReport.data.leads_ch = "0%";
+    newReport.data.sales_ch = "0%";
+    newReport.data.conversion_ch = "0%";
+    newReport.data.sales = "0 UzS";
 
     const reports = getReports();
     reports.push(newReport);

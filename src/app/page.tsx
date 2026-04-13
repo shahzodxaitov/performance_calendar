@@ -13,59 +13,43 @@ const companyData: Record<string, {
 }> = {
   all: {
     stats: [
-      { label: "Bajarildi", value: "14", change: "+4", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
-      { label: "Jarayonda", value: "9", change: "3 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
-      { label: "Kechikkan", value: "2", change: "e'tibor!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
-      { label: "Konversiya", value: "19.2%", change: "+3%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
+      { label: "Bajarildi", value: "0", change: "0", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
+      { label: "Jarayonda", value: "0", change: "0 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
+      { label: "Kechikkan", value: "0", change: "zo'r!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
+      { label: "Konversiya", value: "0%", change: "0%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
     ],
-    crm: { leads: "156", leads_ch: "+14%", sales: "62M", sales_ch: "+20%", topSource: "IG", topPct: "42% ulush" },
-    tasks: [
-      { title: "Mondelux — Reklama Video", time: "Bugun, 15:00", color: "var(--accent-red)" },
-      { title: "Chinar Group — Brending", time: "Bugun, 17:00", color: "var(--accent-orange)" },
-      { title: "Sunnat Umra — SMM Post", time: "Ertaga", color: "var(--accent-blue)" },
-      { title: "Mondelux — Monthly Report", time: "25-Mart", color: "var(--accent-green)" },
-    ],
+    crm: { leads: "0", leads_ch: "0%", sales: "0 UzS", sales_ch: "0%", topSource: "—", topPct: "0% ulush" },
+    tasks: [],
   },
   c1: {
     stats: [
-      { label: "Bajarildi", value: "5", change: "+2", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
-      { label: "Jarayonda", value: "3", change: "1 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
-      { label: "Kechikkan", value: "1", change: "e'tibor!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
-      { label: "Konversiya", value: "22%", change: "+5%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
+      { label: "Bajarildi", value: "0", change: "0", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
+      { label: "Jarayonda", value: "0", change: "0 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
+      { label: "Kechikkan", value: "0", change: "zo'r!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
+      { label: "Konversiya", value: "0%", change: "0%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
     ],
-    crm: { leads: "58", leads_ch: "+16%", sales: "28M", sales_ch: "+22%", topSource: "IG", topPct: "50% ulush" },
-    tasks: [
-      { title: "Reklama Video Montaj", time: "Bugun, 15:00", color: "var(--accent-red)" },
-      { title: "Instagram Reels", time: "Ertaga, 10:00", color: "var(--accent-blue)" },
-      { title: "Monthly Report", time: "25-Mart", color: "var(--accent-green)" },
-    ],
+    crm: { leads: "0", leads_ch: "0%", sales: "0 UzS", sales_ch: "0%", topSource: "—", topPct: "0% ulush" },
+    tasks: [],
   },
   c2: {
     stats: [
-      { label: "Bajarildi", value: "5", change: "+1", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
-      { label: "Jarayonda", value: "4", change: "2 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
-      { label: "Kechikkan", value: "0", change: "zo'r!", icon: AlertCircle, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
-      { label: "Konversiya", value: "18%", change: "+3%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
+      { label: "Bajarildi", value: "0", change: "0", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
+      { label: "Jarayonda", value: "0", change: "0 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
+      { label: "Kechikkan", value: "0", change: "zo'r!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
+      { label: "Konversiya", value: "0%", change: "0%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
     ],
-    crm: { leads: "52", leads_ch: "+12%", sales: "20M", sales_ch: "+18%", topSource: "TG", topPct: "38% ulush" },
-    tasks: [
-      { title: "Brending Dizayn", time: "Bugun, 17:00", color: "var(--accent-orange)" },
-      { title: "Sayt Taqdimot", time: "Ertaga", color: "var(--accent-purple)" },
-      { title: "Target Reklama", time: "26-Mart", color: "var(--accent-blue)" },
-    ],
+    crm: { leads: "0", leads_ch: "0%", sales: "0 UzS", sales_ch: "0%", topSource: "—", topPct: "0% ulush" },
+    tasks: [],
   },
   c3: {
     stats: [
-      { label: "Bajarildi", value: "4", change: "+1", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
-      { label: "Jarayonda", value: "2", change: "0 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
-      { label: "Kechikkan", value: "1", change: "e'tibor!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
-      { label: "Konversiya", value: "16%", change: "+2%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
+      { label: "Bajarildi", value: "0", change: "0", icon: CheckCircle2, color: "text-[var(--accent-green)]", bg: "bg-[var(--accent-green)]/10" },
+      { label: "Jarayonda", value: "0", change: "0 bugun", icon: Clock, color: "text-[var(--accent-blue)]", bg: "bg-[var(--accent-blue)]/10" },
+      { label: "Kechikkan", value: "0", change: "zo'r!", icon: AlertCircle, color: "text-[var(--accent-orange)]", bg: "bg-[var(--accent-orange)]/10" },
+      { label: "Konversiya", value: "0%", change: "0%", icon: BarChart3, color: "text-[var(--accent-purple)]", bg: "bg-[var(--accent-purple)]/10" },
     ],
-    crm: { leads: "46", leads_ch: "+10%", sales: "14M", sales_ch: "+15%", topSource: "IG", topPct: "44% ulush" },
-    tasks: [
-      { title: "SMM Kontent Plan", time: "Ertaga", color: "var(--accent-blue)" },
-      { title: "Umra Paket Video", time: "26-Mart", color: "var(--accent-teal)" },
-    ],
+    crm: { leads: "0", leads_ch: "0%", sales: "0 UzS", sales_ch: "0%", topSource: "—", topPct: "0% ulush" },
+    tasks: [],
   },
 };
 
@@ -153,7 +137,7 @@ export default function DashboardPage() {
             <Link href="/tasks" className="btn-secondary text-[12px] py-2 px-4">Hammasi</Link>
           </div>
           <div className="space-y-2">
-            {data.tasks.map((task, i) => (
+            {data.tasks.length > 0 ? data.tasks.map((task, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-[14px] hover:bg-white/[0.04] transition-colors cursor-pointer group">
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: task.color }} />
                 <div className="flex-1 min-w-0">
@@ -161,7 +145,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-[11px] text-[var(--muted-foreground)] font-medium shrink-0">{task.time}</div>
               </div>
-            ))}
+            )) : (
+              <div className="text-[12px] text-center text-[var(--muted-foreground)] py-8 border border-dashed border-white/10 rounded-xl">
+                Yaqin orada bajarilishi kerak bo'lgan ishlar yo'q
+              </div>
+            )}
           </div>
         </section>
       </div>
