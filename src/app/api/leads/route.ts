@@ -16,22 +16,25 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
-  let startTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
+  let startDate = new Date(new Date().setHours(0,0,0,0));
   
   if (period === "weekly") {
       const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startTimestamp = new Date(new Date(now).setDate(diff)).setHours(0,0,0,0);
+      startDate = new Date(new Date(now).setDate(diff));
+      startDate.setHours(0,0,0,0);
   } else if (period === "monthly") {
-      startTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
   } else if (period === "yearly") {
-      startTimestamp = new Date(now.getFullYear(), 0, 1).getTime();
+      startDate = new Date(now.getFullYear(), 0, 1);
   }
 
-  // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  const startISO = startDate.toISOString();
 
-  // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Faqat joriy davrdagi leadlarni filtrlash - string comparison is faster for ISO dates
+  leads = leads.filter(l => l.created_at >= startISO);
+
+  // Sorter from newest to oldest - string comparison is faster for ISO dates
+  leads.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
 
   return NextResponse.json(leads);
 }
