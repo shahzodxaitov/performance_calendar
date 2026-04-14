@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     reports = reports.filter(r => r.company_id === companyId);
   }
   
-  // Sort by created_at desc
-  reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Sort by created_at desc (optimized with string comparison)
+  reports.sort((a, b) => b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0);
   
   return NextResponse.json({ success: true, reports });
 }

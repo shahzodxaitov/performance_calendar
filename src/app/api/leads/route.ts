@@ -28,10 +28,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  const startISO = new Date(startTimestamp).toISOString();
+  leads = leads.filter(l => l.created_at >= startISO);
 
-  // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Sorter from newest to oldest (optimized with string comparison)
+  leads.sort((a, b) => b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0);
 
   return NextResponse.json(leads);
 }
