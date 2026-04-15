@@ -60,7 +60,14 @@ export default function TasksPage() {
   }
 
   const filtered = search
-    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()) || t.assignee_name.toLowerCase().includes(search.toLowerCase()))
+    ? (() => {
+        // Bolt Optimization: Move toLowerCase() outside of the filter loop
+        const searchLower = search.toLowerCase();
+        return tasks.filter((t) =>
+          t.title.toLowerCase().includes(searchLower) ||
+          t.assignee_name.toLowerCase().includes(searchLower)
+        );
+      })()
     : tasks;
 
   return (
