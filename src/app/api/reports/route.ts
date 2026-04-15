@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
   }
   
   // Sort by created_at desc
-  reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Bolt Optimization: Lexicographical sort is more efficient for ISO 8601 strings
+  reports.sort((a, b) => b.created_at.localeCompare(a.created_at));
   
   return NextResponse.json({ success: true, reports });
 }
@@ -42,9 +43,13 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(end_date);
     endDate.setHours(23, 59, 59, 999);
     
+    // Bolt Optimization: Convert to ISO once and use string comparisons for O(n) filtering
+    const startISO = startDate.toISOString();
+    const endISO = endDate.toISOString();
+
     // Compute data from db
-    const leads = getLeads().filter(l => l.company_id === company_id && new Date(l.created_at) >= startDate && new Date(l.created_at) <= endDate);
-    const tasks = getTasks().filter(t => t.company_id === company_id && new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate);
+    const leads = getLeads().filter(l => l.company_id === company_id && l.created_at >= startISO && l.created_at <= endISO);
+    const tasks = getTasks().filter(t => t.company_id === company_id && t.created_at >= startISO && t.created_at <= endISO);
     
     const totalLeads = leads.length;
     const sales = leads.filter(l => l.status === "Sotib oldi").length;
