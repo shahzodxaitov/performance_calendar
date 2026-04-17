@@ -1,0 +1,3 @@
+## 2025-05-22 - Optimized Task Lookups and Search Filtering
+**Learning:** In batch operations like reminder checks, replacing `Array.find` inside a loop with a `Map` lookup reduces complexity from O(N*M) to O(N+M). Additionally, hoisting string transformations (like `.toLowerCase()`) out of `filter` loops in React prevents redundant computations during every render.
+**Action:** Always prefer `Map` for lookups in performance-critical loops and check for hoistable transformations in expensive data filtering. Always verify that `npm install` or `next build` don't silently modify `package-lock.json` or `tsconfig.json` against project boundaries.
