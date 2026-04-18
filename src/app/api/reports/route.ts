@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Sort by created_at desc
-  reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  reports.sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0));
   
   return NextResponse.json({ success: true, reports });
 }
@@ -37,14 +37,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kompaniya topilmadi" }, { status: 404 });
     }
 
-    const startDate = new Date(start_date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(end_date);
-    endDate.setHours(23, 59, 59, 999);
+    const startDateObj = new Date(start_date);
+    startDateObj.setHours(0, 0, 0, 0);
+    const endDateObj = new Date(end_date);
+    endDateObj.setHours(23, 59, 59, 999);
+
+    const startIso = startDateObj.toISOString();
+    const endIso = endDateObj.toISOString();
     
     // Compute data from db
-    const leads = getLeads().filter(l => l.company_id === company_id && new Date(l.created_at) >= startDate && new Date(l.created_at) <= endDate);
-    const tasks = getTasks().filter(t => t.company_id === company_id && new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate);
+    const leads = getLeads().filter(l => l.company_id === company_id && l.created_at >= startIso && l.created_at <= endIso);
+    const tasks = getTasks().filter(t => t.company_id === company_id && t.created_at >= startIso && t.created_at <= endIso);
     
     const totalLeads = leads.length;
     const sales = leads.filter(l => l.status === "Sotib oldi").length;
@@ -76,7 +79,7 @@ export async function POST(request: NextRequest) {
       id: Math.random().toString(36).substring(7),
       type: reportType as any,
       title,
-      subtitle: `${startDate.toLocaleDateString("uz-UZ")} – ${endDate.toLocaleDateString("uz-UZ")}`,
+      subtitle: `${startDateObj.toLocaleDateString("uz-UZ")} – ${endDateObj.toLocaleDateString("uz-UZ")}`,
       company_id,
       company_name: company.name,
       share_token: `${company.token}-${Math.random().toString(36).substring(7)}`,
