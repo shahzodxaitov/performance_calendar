@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Plus, Search, Clock, AlertCircle, CheckCircle2, MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TaskModal } from "@/components/TaskModal";
@@ -59,9 +59,15 @@ export default function TasksPage() {
     return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
   }
 
-  const filtered = search
-    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()) || t.assignee_name.toLowerCase().includes(search.toLowerCase()))
-    : tasks;
+  // Optimization: Memoize filtered tasks and hoist search.toLowerCase() to avoid redundant transformations
+  const filtered = useMemo(() => {
+    if (!search) return tasks;
+    const lowerSearch = search.toLowerCase();
+    return tasks.filter((t) =>
+      t.title.toLowerCase().includes(lowerSearch) ||
+      t.assignee_name.toLowerCase().includes(lowerSearch)
+    );
+  }, [tasks, search]);
 
   return (
     <div className="space-y-8 animate-in">
