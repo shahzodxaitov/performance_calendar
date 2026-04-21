@@ -16,13 +16,17 @@ export async function GET() {
   const now = new Date();
   const tasks = getTasks();
   const team = getTeamMembers();
+  // Performance: Convert team array to Map for O(1) lookups inside the loop
+  // This reduces complexity from O(Tasks * Team) to O(Tasks + Team)
+  const teamMap = new Map(team.map(m => [m.id, m]));
+
   const results: { task: string; type: string; sent: boolean }[] = [];
   let updated = false;
 
   for (const task of tasks) {
     if (task.status === "done") continue;
 
-    const member = team.find((m) => m.id === task.assignee_id);
+    const member = teamMap.get(task.assignee_id);
     if (!member?.chat_id) continue;
 
     const deadlineStr = task.due_time
