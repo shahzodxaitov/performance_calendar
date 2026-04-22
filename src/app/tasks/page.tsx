@@ -59,8 +59,16 @@ export default function TasksPage() {
     return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
   }
 
+  // ⚡ Bolt: Hoist search query transformation out of the filter loop.
+  // Reduces O(N) string transformations during high-frequency filtering.
   const filtered = search
-    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()) || t.assignee_name.toLowerCase().includes(search.toLowerCase()))
+    ? (() => {
+        const query = search.toLowerCase();
+        return tasks.filter((t) =>
+          t.title.toLowerCase().includes(query) ||
+          t.assignee_name.toLowerCase().includes(query)
+        );
+      })()
     : tasks;
 
   return (

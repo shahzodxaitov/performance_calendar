@@ -16,13 +16,17 @@ export async function GET() {
   const now = new Date();
   const tasks = getTasks();
   const team = getTeamMembers();
+
+  // ⚡ Bolt: Optimize lookup from O(N*M) to O(N+M) by using a Map for team member lookups.
+  // This avoids a linear search for each task in the loop.
+  const teamMap = new Map(team.map((m) => [m.id, m]));
   const results: { task: string; type: string; sent: boolean }[] = [];
   let updated = false;
 
   for (const task of tasks) {
     if (task.status === "done") continue;
 
-    const member = team.find((m) => m.id === task.assignee_id);
+    const member = teamMap.get(task.assignee_id);
     if (!member?.chat_id) continue;
 
     const deadlineStr = task.due_time
