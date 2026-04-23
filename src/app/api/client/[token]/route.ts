@@ -1,13 +1,47 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCompanies, getLeads, getTasks } from "@/lib/data-store";
+import crypto from "crypto";
+
+// Rate limiting store (in production, use Redis)
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const windowMs = 60000; // 1 minute window
+  const maxRequests = 30; // 30 requests per minute
+  
+  const record = rateLimitStore.get(ip);
+  if (!record || now > record.resetTime) {
+    rateLimitStore.set(ip, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  
+  if (record.count >= maxRequests) {
+    return false;
+  }
+  
+  record.count++;
+  return true;
+}
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ token: string }> }
 ) {
+  // Rate limiting
+  const ip = request.headers.get('x-forwarded-for') || 'unknown';
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const { token } = await context.params;
   const { searchParams } = new URL(request.url);
   const period = searchParams.get("period") || "daily";
+  
+  // Validate token format - must be cryptographically secure (64 hex chars)
+  if (!token || typeof token !== 'string' || token.length < 64) {
+    return NextResponse.json({ error: "Invalid token format" }, { status: 400 });
+  }
 
   const companies = getCompanies();
   const company = companies.find(c => c.token === token);

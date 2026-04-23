@@ -20,7 +20,7 @@
     {
       "id": "c1",
       "name": "Mondelux",
-      "token": "mondelux",
+      "token": "",
       "fb_ad_account_id": "",
       "fb_access_token": "",
       "amocrm_access_token": ""
@@ -28,16 +28,16 @@
     {
       "id": "c2",
       "name": "Chinar Group",
-      "token": "chinar",
+      "token": "",
       "fb_ad_account_id": ""
     },
     {
       "id": "c3",
       "name": "Sunnat Umra",
-      "token": "sunnat",
+      "token": "",
       "fb_ad_account_id": "1232843512279936",
       "amocrm_domain": "samarqanshahar.amocrm.ru",
-      "amocrm_access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjM5MzgwMmMyNTg5NmM3ODBjYTAxOTg0MjBmZWI1Yjk3NGFhOGRhN2NkNzA4ZWJiMDc2NGRmY2IxMGFjZjRkZGJiMGYxMDVlMmQxNWZkMDg1In0.eyJhdWQiOiIzZTg0MjBhNC01YWQ1LTRlODQtODg3Ny1kNzlmY2VjY2M5MDQiLCJqdGkiOiIzOTM4MDJjMjU4OTZjNzgwY2EwMTk4NDIwZmViNWI5NzRhYThkYTdjZDcwOGViYjA3NjRkZmNiMTBhY2Y0ZGRiYjBmMTA1ZTJkMTVmZDA4NSIsImlhdCI6MTc3NDMxMTc1MywibmJmIjoxNzc0MzExNzUzLCJleHAiOjE5MzIwNzY4MDAsInN1YiI6IjEzMzEzNzkwIiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjMyODA5OTAyLCJiYXNlX2RvbWFpbiI6ImFtb2NybS5ydSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJwdXNoX25vdGlmaWNhdGlvbnMiLCJmaWxlcyIsImNybSIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiXSwiaGFzaF91dWlkIjoiMTIxOWM5MmMtZTZjMS00NzZmLWI5OTItN2EyYTQ2MDcwNjZhIiwiYXBpX2RvbWFpbiI6ImFwaS1iLmFtb2NybS5ydSJ9.G3ZdBSrSWTpqkBfqZYHKBPGQNf986ODQvflSyOFxVBPCjB-JvGH9V8riRqhIPX4CnqdM7wXwIlaqUzpTem0B-ABaPsNDRwLSy62qyyIRvL_I9KHsvEuckH77_HtRlJRdM3yGTjZmFBw6BwuMbvj95a1Z17iQTUpJxr7RSxuWAgNFMdHjnoIHta0jvuLwM9EoFK_4AG1IUHSMk1Pa9fUqsSUs-2JcRu5jqE0W5MozQFnV-YoObAW-NriPSawuA-VR1HqYfRvxgWfDBER3MYzzoW_zuOGecGdZWu2LA8dnHqsofa0ASXBzH67xrreYexNR9UFmMPCml7OH4DD8-79lgA",
+      "amocrm_access_token": "",
       "fb_access_token": ""
     }
   ],

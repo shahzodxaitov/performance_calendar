@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     saveReports(reports);
 
     // Send Telegram Notification to all connected admins/managers
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     if (BOT_TOKEN) {
        const { getTeamMembers } = require("@/lib/data-store");
        const team = getTeamMembers();
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 Maketni yuklab oling yoki ko'ring:\n🔗 ${reportUrl}`;
 
        for (const cid of chatIds) {
-          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
              method: "POST",
              headers: { "Content-Type": "application/json" },
              body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
