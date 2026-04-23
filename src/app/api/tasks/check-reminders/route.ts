@@ -19,10 +19,13 @@ export async function GET() {
   const results: { task: string; type: string; sent: boolean }[] = [];
   let updated = false;
 
+  // ⚡ Bolt: Use a Map for O(1) lookup complexity (reduces overall complexity from O(N*M) to O(N+M))
+  const teamMap = new Map(team.map(m => [m.id, m]));
+
   for (const task of tasks) {
     if (task.status === "done") continue;
 
-    const member = team.find((m) => m.id === task.assignee_id);
+    const member = teamMap.get(task.assignee_id);
     if (!member?.chat_id) continue;
 
     const deadlineStr = task.due_time
