@@ -3,7 +3,7 @@ import { getTasks, saveTasks, getTeamMembers, type LocalTask } from "@/lib/data-
 
 export const dynamic = "force-dynamic";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 async function sendTelegramNotification(chatId: string, text: string) {
   if (!chatId || !BOT_TOKEN) return;

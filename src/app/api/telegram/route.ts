@@ -4,11 +4,15 @@ import { getTeamMembers, saveTeamMembers, getCompanies } from "@/lib/data-store"
 
 export const dynamic = "force-dynamic";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://performance-calendar.vercel.app";
 
 // ===== TELEGRAM HELPERS =====
 async function sendMessage(chatId: number | string, text: string, reply_markup?: any) {
+  if (!BOT_TOKEN) {
+    console.error("Telegram bot token not configured");
+    return { ok: false, error: "Bot token not configured" };
+  }
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,6 +29,7 @@ async function sendMessage(chatId: number | string, text: string, reply_markup?:
 }
 
 async function answerCallback(callbackId: string, text?: string) {
+  if (!BOT_TOKEN) return;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
