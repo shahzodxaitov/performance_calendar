@@ -19,10 +19,15 @@ export async function GET() {
   const results: { task: string; type: string; sent: boolean }[] = [];
   let updated = false;
 
+  // ⚡ Bolt: Use a Map for O(1) member lookup instead of O(M) .find() in each iteration.
+  // This reduces algorithmic complexity from O(N*M) to O(N+M).
+  const teamMap = new Map(team.map((m) => [m.id, m]));
+  const notifications: Promise<void>[] = [];
+
   for (const task of tasks) {
     if (task.status === "done") continue;
 
-    const member = team.find((m) => m.id === task.assignee_id);
+    const member = teamMap.get(task.assignee_id);
     if (!member?.chat_id) continue;
 
     const deadlineStr = task.due_time
@@ -34,19 +39,32 @@ export async function GET() {
 
     if (!task.notified_1day && hoursLeft > 0 && hoursLeft <= 28 && hoursLeft > 2) {
       const message = `⏰ <b>Eslatma: 1 kun qoldi!</b>\n\n📌 <b>${task.title}</b>\n🏢 Loyiha: <b>${task.company_name}</b>\n📅 Muddat: <b>${task.due_date}${task.due_time ? " " + task.due_time : ""}</b>\n\n⚠️ Iltimos, vaqtida bajaring!`;
-      await sendTelegramNotification(member.chat_id, message);
-      task.notified_1day = true;
-      updated = true;
-      results.push({ task: task.title, type: "1day", sent: true });
+
+      // ⚡ Bolt: Parallelize notifications to avoid blocking the loop with sequential network requests.
+      notifications.push((async () => {
+        await sendTelegramNotification(member.chat_id, message);
+        task.notified_1day = true;
+        updated = true;
+        results.push({ task: task.title, type: "1day", sent: true });
+      })());
     }
 
     if (!task.notified_1hour && hoursLeft > 0 && hoursLeft <= 1.5) {
       const message = `🚨 <b>Diqqat: 1 soat qoldi!</b>\n\n📌 <b>${task.title}</b>\n🏢 Loyiha: <b>${task.company_name}</b>\n📅 Muddat: <b>${task.due_date}${task.due_time ? " " + task.due_time : ""}</b>\n\n‼️ Juda kam vaqt qoldi!`;
-      await sendTelegramNotification(member.chat_id, message);
-      task.notified_1hour = true;
-      updated = true;
-      results.push({ task: task.title, type: "1hour", sent: true });
+
+      // ⚡ Bolt: Parallelize notifications to avoid blocking the loop with sequential network requests.
+      notifications.push((async () => {
+        await sendTelegramNotification(member.chat_id, message);
+        task.notified_1hour = true;
+        updated = true;
+        results.push({ task: task.title, type: "1hour", sent: true });
+      })());
     }
+  }
+
+  // ⚡ Bolt: Wait for all parallel network requests to complete.
+  if (notifications.length > 0) {
+    await Promise.allSettled(notifications);
   }
 
   if (updated) saveTasks(tasks);
