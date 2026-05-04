@@ -1,0 +1,3 @@
+## 2025-05-15 - Batch Reminder Parallelization & Lookup Optimization
+**Learning:** Sequential network requests in a loop (like sending notifications) cause cumulative latency that scales linearly with the number of items. Additionally, nested lookups ($O(N \times M)$) can be significantly improved by pre-indexing data into a Map ($O(N+M)$).
+**Action:** Always parallelize independent I/O operations using `Promise.all` and use Maps for constant-time lookups when iterating over large datasets. Ensure state persistence (e.g., `saveTasks`) only occurs after all parallel operations are complete and successful.
