@@ -16,22 +16,28 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
-  let startTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
-  
+  const startDate = new Date(now);
+  startDate.setHours(0, 0, 0, 0);
+
   if (period === "weekly") {
-      const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startTimestamp = new Date(new Date(now).setDate(diff)).setHours(0,0,0,0);
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    startDate.setDate(diff);
   } else if (period === "monthly") {
-      startTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    startDate.setDate(1);
   } else if (period === "yearly") {
-      startTimestamp = new Date(now.getFullYear(), 0, 1).getTime();
+    startDate.setMonth(0, 1);
   }
 
-  // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  // ⚡ Bolt: Convert to ISO string once to enable high-performance lexicographical string comparisons.
+  // This avoids repeated 'new Date()' instantiations in loops, reducing O(N) overhead.
+  const startISO = startDate.toISOString();
 
-  // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // ⚡ Bolt: Lexicographical string comparison is significantly faster than Date object instantiation for ISO 8601 strings.
+  leads = leads.filter((l) => l.created_at >= startISO);
+
+  // ⚡ Bolt: Sort from newest to oldest using direct string comparison to avoid O(N log N) Date conversions.
+  leads.sort((a, b) => (b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0));
 
   return NextResponse.json(leads);
 }
@@ -58,7 +64,7 @@ export async function PATCH(request: NextRequest) {
     saveLeads(leads);
     
     return NextResponse.json({ success: true, lead: leads[index] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });
   }
 }
