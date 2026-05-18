@@ -3,58 +3,87 @@ import { getTasks, saveTasks, getTeamMembers } from "@/lib/data-store";
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
-async function sendTelegramNotification(chatId: string, text: string) {
-  if (!chatId || !BOT_TOKEN) return;
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
-  });
+async function sendTelegramNotification(chatId: string, text: string): Promise<boolean> {
+  if (!chatId || !BOT_TOKEN) return false;
+  try {
+    const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error("⚡ Bolt: Telegram notification error:", error);
+    return false;
+  }
 }
 
 export async function GET() {
-  const now = new Date();
+  // ⚡ Bolt: Pre-calculate current time to avoid redundant Date object creation in loop
+  const nowMs = Date.now();
   const tasks = getTasks();
   const team = getTeamMembers();
+
+  // ⚡ Bolt: Use a Map for O(1) lookup, reducing total complexity from O(N*M) to O(N+M)
+  const teamMap = new Map(team.map(m => [m.id, m]));
+
   const results: { task: string; type: string; sent: boolean }[] = [];
+  const notificationPromises: Promise<void>[] = [];
   let updated = false;
 
   for (const task of tasks) {
     if (task.status === "done") continue;
 
-    const member = team.find((m) => m.id === task.assignee_id);
+    const member = teamMap.get(task.assignee_id);
     if (!member?.chat_id) continue;
 
     const deadlineStr = task.due_time
       ? `${task.due_date}T${task.due_time}:00+05:00`
       : `${task.due_date}T23:59:00+05:00`;
     const deadline = new Date(deadlineStr);
-    const diff = deadline.getTime() - now.getTime();
+    const diff = deadline.getTime() - nowMs;
     const hoursLeft = diff / (1000 * 60 * 60);
 
     if (!task.notified_1day && hoursLeft > 0 && hoursLeft <= 28 && hoursLeft > 2) {
       const message = `⏰ <b>Eslatma: 1 kun qoldi!</b>\n\n📌 <b>${task.title}</b>\n🏢 Loyiha: <b>${task.company_name}</b>\n📅 Muddat: <b>${task.due_date}${task.due_time ? " " + task.due_time : ""}</b>\n\n⚠️ Iltimos, vaqtida bajaring!`;
-      await sendTelegramNotification(member.chat_id, message);
-      task.notified_1day = true;
-      updated = true;
-      results.push({ task: task.title, type: "1day", sent: true });
+
+      // ⚡ Bolt: Parallelize notifications to avoid sequential latency bottlenecks
+      notificationPromises.push(
+        sendTelegramNotification(member.chat_id, message).then((success) => {
+          if (success) {
+            task.notified_1day = true;
+            updated = true;
+            results.push({ task: task.title, type: "1day", sent: true });
+          }
+        })
+      );
     }
 
     if (!task.notified_1hour && hoursLeft > 0 && hoursLeft <= 1.5) {
       const message = `🚨 <b>Diqqat: 1 soat qoldi!</b>\n\n📌 <b>${task.title}</b>\n🏢 Loyiha: <b>${task.company_name}</b>\n📅 Muddat: <b>${task.due_date}${task.due_time ? " " + task.due_time : ""}</b>\n\n‼️ Juda kam vaqt qoldi!`;
-      await sendTelegramNotification(member.chat_id, message);
-      task.notified_1hour = true;
-      updated = true;
-      results.push({ task: task.title, type: "1hour", sent: true });
+
+      notificationPromises.push(
+        sendTelegramNotification(member.chat_id, message).then((success) => {
+          if (success) {
+            task.notified_1hour = true;
+            updated = true;
+            results.push({ task: task.title, type: "1hour", sent: true });
+          }
+        })
+      );
     }
   }
 
+  // ⚡ Bolt: Wait for all parallel notification requests to complete
+  await Promise.all(notificationPromises);
+
+  // ⚡ Bolt: Only persist to disk if state actually changed
   if (updated) saveTasks(tasks);
 
   return NextResponse.json({
     checked: tasks.length,
     reminders_sent: results.length,
     details: results,
-    checked_at: now.toISOString(),
+    checked_at: new Date(nowMs).toISOString(),
   });
 }
