@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReports, saveReports, getCompanies, getTasks, getLeads, type ReportData } from "@/lib/data-store";
+import { getReports, saveReports, getCompanies, getTasks, getLeads, getTeamMembers, type ReportData, type ReportType } from "@/lib/data-store";
+import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt: Use request.nextUrl.searchParams for better performance in Next.js
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const token = searchParams.get("token");
   
@@ -20,8 +22,9 @@ export async function GET(request: NextRequest) {
     reports = reports.filter(r => r.company_id === companyId);
   }
   
+  // ⚡ Bolt: Use lexicographical string comparison for faster sorting (avoiding Date instantiation)
   // Sort by created_at desc
-  reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  reports.sort((a, b) => b.created_at.localeCompare(a.created_at));
   
   return NextResponse.json({ success: true, reports });
 }
@@ -41,10 +44,14 @@ export async function POST(request: NextRequest) {
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(end_date);
     endDate.setHours(23, 59, 59, 999);
+
+    // ⚡ Bolt: Use ISO strings for lexicographical comparison to avoid thousands of Date instantiations in filter loops
+    const startIso = startDate.toISOString();
+    const endIso = endDate.toISOString();
     
     // Compute data from db
-    const leads = getLeads().filter(l => l.company_id === company_id && new Date(l.created_at) >= startDate && new Date(l.created_at) <= endDate);
-    const tasks = getTasks().filter(t => t.company_id === company_id && new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate);
+    const leads = getLeads().filter(l => l.company_id === company_id && l.created_at >= startIso && l.created_at <= endIso);
+    const tasks = getTasks().filter(t => t.company_id === company_id && t.created_at >= startIso && t.created_at <= endIso);
     
     const totalLeads = leads.length;
     const sales = leads.filter(l => l.status === "Sotib oldi").length;
@@ -74,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     const newReport: ReportData = {
       id: Math.random().toString(36).substring(7),
-      type: reportType as any,
+      type: reportType as ReportType,
       title,
       subtitle: `${startDate.toLocaleDateString("uz-UZ")} – ${endDate.toLocaleDateString("uz-UZ")}`,
       company_id,
@@ -107,27 +114,29 @@ export async function POST(request: NextRequest) {
     // Send Telegram Notification to all connected admins/managers
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
     if (BOT_TOKEN) {
-       const { getTeamMembers } = require("@/lib/data-store");
        const team = getTeamMembers();
-       let chatIds: string[] = [];
+       const chatIdSet = new Set<string>();
+
+       // ⚡ Bolt: Use Set for O(N) unique chatIds collection
        // Add local chat ids
-       team.forEach((m: any) => {
-          if (m.chat_id && !chatIds.includes(m.chat_id)) chatIds.push(m.chat_id);
+       team.forEach((m) => {
+          if (m.chat_id) chatIdSet.add(m.chat_id);
        });
        
        // Try fetching all chat_ids from Supabase if configured
        try {
-         const { createClient } = require('@supabase/supabase-js');
          if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
             const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
             const { data } = await supabase.from("profiles").select("telegram_chat_id").not("telegram_chat_id", "is", null);
             if (data) {
-               data.forEach((p: any) => {
-                  if (p.telegram_chat_id && !chatIds.includes(p.telegram_chat_id)) chatIds.push(p.telegram_chat_id);
+               data.forEach((p) => {
+                  if (p.telegram_chat_id) chatIdSet.add(p.telegram_chat_id);
                });
             }
          }
-       } catch(e) {}
+       } catch {
+         // Silently handle Supabase fetch errors
+       }
        
        const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
        const reportUrl = `${APP_URL}/reports/share/${newReport.share_token}`;
@@ -141,23 +150,26 @@ export async function POST(request: NextRequest) {
 
 Maketni yuklab oling yoki ko'ring:\n🔗 ${reportUrl}`;
 
-       for (const cid of chatIds) {
-          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+       // ⚡ Bolt: Parallelize Telegram notifications with Promise.allSettled for significant speedup
+       const chatIds = Array.from(chatIdSet);
+       await Promise.allSettled(chatIds.map(cid =>
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
              method: "POST",
              headers: { "Content-Type": "application/json" },
              body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
-          }).catch(() => {});
-       }
+          })
+       ));
     }
 
     return NextResponse.json({ success: true, report: newReport });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Internal Server Error" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt: Use request.nextUrl.searchParams for better performance
+  const { searchParams } = request.nextUrl;
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID yuborilmadi" }, { status: 400 });
 
