@@ -1,0 +1,3 @@
+## 2025-05-14 - Batch Notification Optimization
+**Learning:** In batch processes like `check-reminders`, sequential `await` calls for network requests (e.g., Telegram API) create a cumulative bottleneck proportional to the number of items. Parallelizing with `Promise.allSettled` reduces the total latency to the duration of the slowest request. Additionally, replacing $O(N \times M)$ linear searches with $O(N + M)$ `Map` lookups is a critical scalability pattern.
+**Action:** Always check for linear searches inside loops and sequential network requests in batch API routes. Refactor to `Map` lookups and parallel processing where safety permits.
