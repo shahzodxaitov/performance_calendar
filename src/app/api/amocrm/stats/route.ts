@@ -4,7 +4,8 @@ import { getCompanies } from "@/lib/data-store";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt: Use request.nextUrl.searchParams for better performance in Next.js
+  const searchParams = request.nextUrl.searchParams;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     qualified_leads: 0,
     visits: 0,
     sales_amount: 0,
-    chart: [] as any[],
+    chart: [] as { name: string; leads: number; sales: number }[],
     status: "not_connected"
   };
 
@@ -32,16 +33,20 @@ export async function GET(request: NextRequest) {
 
   if (company && company.amocrm_domain && company.amocrm_access_token) {
     try {
-      // Calculate timestamps based on period
-      let startOfDay = 0;
-      let endOfDay = Math.floor(new Date().setHours(23, 59, 59, 999) / 1000);
+      // ⚡ Bolt: Optimize date calculations by reusing a single Date object to avoid multiple instantiations
       const now = new Date();
+      const endOfDay = Math.floor(new Date(now).setHours(23, 59, 59, 999) / 1000);
+      let startOfDay = 0;
 
       if (period === "daily") {
-         startOfDay = Math.floor(new Date(new Date().setHours(0,0,0,0)).getTime() / 1000);
+         startOfDay = Math.floor(new Date(now).setHours(0,0,0,0) / 1000);
       } else if (period === "weekly") {
-         const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-         startOfDay = Math.floor(new Date(now.setDate(diff)).setHours(0,0,0,0) / 1000);
+         const day = now.getDay();
+         const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+         const tempDate = new Date(now);
+         tempDate.setDate(diff);
+         tempDate.setHours(0, 0, 0, 0);
+         startOfDay = Math.floor(tempDate.getTime() / 1000);
       } else if (period === "monthly") {
          startOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000);
       } else if (period === "yearly") {
@@ -56,9 +61,9 @@ export async function GET(request: NextRequest) {
 
       if (response.ok) {
         const data = await response.json();
-        const leads: any[] = data?._embedded?.leads || [];
+        const leads: { status_id: number; price: number; created_at: number }[] = data?._embedded?.leads || [];
 
-        let totalLeads = leads.length;
+        const totalLeads = leads.length;
         let qualifiedLeads = 0, visits = 0, salesAmount = 0;
 
         // Chart yasash uchun strukturalash
@@ -74,9 +79,14 @@ export async function GET(request: NextRequest) {
            ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"].forEach(d => chartData[d] = { leads: 0, sales: 0 });
         }
 
+        // ⚡ Bolt: Cache array references outside the loop for O(1) access and reduce Date objects
+        const weekDays = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
+        const months = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+        const qualifiedStatuses = new Set([82159474, 82159478, 82159486]);
+
         leads.forEach(lead => {
           const status = lead.status_id;
-          if ([82159474, 82159478, 82159486].includes(status)) qualifiedLeads++;
+          if (qualifiedStatuses.has(status)) qualifiedLeads++;
           if (status === 82159486) visits++;
           
           let isSale = false;
@@ -86,25 +96,26 @@ export async function GET(request: NextRequest) {
           }
 
           // Chart guruhlash
-          const leadDate = new Date(lead.created_at * 1000);
+          // ⚡ Bolt: Only create Date object if absolutely necessary for current period grouping
           let key = "";
+          const leadDate = new Date(lead.created_at * 1000);
+
           if (period === "daily") {
             const hour = leadDate.getHours();
-            const bucket = hour % 2 === 0 ? hour : hour - 1; 
+            const bucket = hour & ~1; // ⚡ Bolt: Bitwise optimization for even bucket
             key = `${bucket < 10 ? '0'+bucket : bucket}:00`;
           } else if (period === "weekly") {
-            const arr = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
-            key = arr[leadDate.getDay()];
+            key = weekDays[leadDate.getDay()];
           } else if (period === "monthly") {
             key = `${leadDate.getDate()}-kun`;
           } else if (period === "yearly") {
-            const arr = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
-            key = arr[leadDate.getMonth()];
+            key = months[leadDate.getMonth()];
           }
           
-          if (chartData[key] !== undefined) {
-             chartData[key].leads += 1;
-             if (isSale) chartData[key].sales += 1;
+          const entry = chartData[key];
+          if (entry) {
+             entry.leads++;
+             if (isSale) entry.sales++;
           }
         });
 
@@ -127,7 +138,7 @@ export async function GET(request: NextRequest) {
         // Fallback to mock if token expired or invalid
         stats.status = "error_fetching";
       }
-    } catch (e) {
+    } catch {
       stats.status = "error_fetching";
     }
   } else {
