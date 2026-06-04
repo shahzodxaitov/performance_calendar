@@ -1,0 +1,3 @@
+## 2025-05-15 - [Optimize reports API route]
+**Learning:** Pre-existing lint errors in unrelated files (like `react/no-unescaped-entities` in `src/app/reports/page.tsx`) cause global `npm run build` and `npm run lint` to fail, making global verification difficult. Additionally, `next build` automatically modifies `tsconfig.json` (e.g., setting `jsx` to `preserve`).
+**Action:** Use `npx eslint <modified_file_path>` for targeted linting verification when global linting fails. Always run `git restore tsconfig.json` after `npm run build` or `npm install` to revert unauthorized compiler reconfigurations.
