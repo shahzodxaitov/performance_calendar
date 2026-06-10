@@ -1,0 +1,3 @@
+## 2025-05-15 - Batch Notification Optimization
+**Learning:** Sequential network requests in batch jobs (like task reminders) create a major bottleneck. Replacing them with `Promise.allSettled` while mapping results back to local state ensures high performance and data integrity even if individual requests fail. Additionally, O(N*M) lookups in this hybrid memory-DB architecture should be avoided by using Maps.
+**Action:** Use `Promise.allSettled` for all batch notification or external API sync routes. Ensure state updates (like `notified_...`) are only performed for fulfilled and successful results. Always prefer `Map` for cross-entity lookups during batch processing.
