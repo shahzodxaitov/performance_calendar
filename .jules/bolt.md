@@ -1,0 +1,3 @@
+## 2025-05-14 - Map-based lookups and Parallel Notifications in Batch Jobs
+**Learning:** In batch processing routes (like `check-reminders`), replacing linear O(N) array lookups (`.find()`) inside a loop with a O(1) `Map` reduces complexity from O(N*M) to O(N+M). Furthermore, parallelizing external API calls (Telegram) using `Promise.allSettled` drastically reduces total request latency from sequential `await` calls.
+**Action:** Always prefer `Map` for cross-referencing datasets in loops and use `Promise.allSettled` for batch notifications to ensure one failure doesn't block the entire process.
