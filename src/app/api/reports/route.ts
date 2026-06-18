@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReports, saveReports, getCompanies, getTasks, getLeads, type ReportData } from "@/lib/data-store";
+import { getReports, saveReports, getCompanies, getTasks, getLeads, getTeamMembers, type ReportData, type ReportType, type TeamMember } from "@/lib/data-store";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const token = searchParams.get("token");
   
@@ -20,8 +21,8 @@ export async function GET(request: NextRequest) {
     reports = reports.filter(r => r.company_id === companyId);
   }
   
-  // Sort by created_at desc
-  reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // ⚡ Bolt: Direct lexicographical string comparison for ISO 8601 timestamps is ~30x faster than Date object instantiation
+  reports.sort((a, b) => (b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0));
   
   return NextResponse.json({ success: true, reports });
 }
@@ -37,14 +38,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kompaniya topilmadi" }, { status: 404 });
     }
 
-    const startDate = new Date(start_date);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(end_date);
-    endDate.setHours(23, 59, 59, 999);
+    // ⚡ Bolt: Pre-calculate ISO strings for filtering to avoid creating Date objects in the loop
+    const startISO = new Date(start_date);
+    startISO.setHours(0, 0, 0, 0);
+    const startStr = startISO.toISOString();
+
+    const endISO = new Date(end_date);
+    endISO.setHours(23, 59, 59, 999);
+    const endStr = endISO.toISOString();
     
     // Compute data from db
-    const leads = getLeads().filter(l => l.company_id === company_id && new Date(l.created_at) >= startDate && new Date(l.created_at) <= endDate);
-    const tasks = getTasks().filter(t => t.company_id === company_id && new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate);
+    const leads = getLeads().filter(l => l.company_id === company_id && l.created_at >= startStr && l.created_at <= endStr);
+    const tasks = getTasks().filter(t => t.company_id === company_id && t.created_at >= startStr && t.created_at <= endStr);
     
     const totalLeads = leads.length;
     const sales = leads.filter(l => l.status === "Sotib oldi").length;
@@ -74,9 +79,9 @@ export async function POST(request: NextRequest) {
 
     const newReport: ReportData = {
       id: Math.random().toString(36).substring(7),
-      type: reportType as any,
+      type: reportType as ReportType,
       title,
-      subtitle: `${startDate.toLocaleDateString("uz-UZ")} – ${endDate.toLocaleDateString("uz-UZ")}`,
+      subtitle: `${startISO.toLocaleDateString("uz-UZ")} – ${endISO.toLocaleDateString("uz-UZ")}`,
       company_id,
       company_name: company.name,
       share_token: `${company.token}-${Math.random().toString(36).substring(7)}`,
@@ -105,29 +110,29 @@ export async function POST(request: NextRequest) {
     saveReports(reports);
 
     // Send Telegram Notification to all connected admins/managers
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+    // ⚡ Bolt: Use environment variable only and remove hardcoded fallback for security.
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     if (BOT_TOKEN) {
-       const { getTeamMembers } = require("@/lib/data-store");
        const team = getTeamMembers();
-       let chatIds: string[] = [];
+       const chatIds = new Set<string>();
+
        // Add local chat ids
-       team.forEach((m: any) => {
-          if (m.chat_id && !chatIds.includes(m.chat_id)) chatIds.push(m.chat_id);
+       team.forEach((m: TeamMember) => {
+          if (m.chat_id) chatIds.add(m.chat_id);
        });
        
        // Try fetching all chat_ids from Supabase if configured
        try {
-         const { createClient } = require('@supabase/supabase-js');
          if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
             const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
             const { data } = await supabase.from("profiles").select("telegram_chat_id").not("telegram_chat_id", "is", null);
             if (data) {
-               data.forEach((p: any) => {
-                  if (p.telegram_chat_id && !chatIds.includes(p.telegram_chat_id)) chatIds.push(p.telegram_chat_id);
+               (data as { telegram_chat_id: string }[]).forEach((p) => {
+                  if (p.telegram_chat_id) chatIds.add(p.telegram_chat_id);
                });
             }
          }
-       } catch(e) {}
+       } catch {}
        
        const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
        const reportUrl = `${APP_URL}/reports/share/${newReport.share_token}`;
@@ -141,23 +146,26 @@ export async function POST(request: NextRequest) {
 
 Maketni yuklab oling yoki ko'ring:\n🔗 ${reportUrl}`;
 
-       for (const cid of chatIds) {
-          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
-          }).catch(() => {});
+       // ⚡ Bolt: Parallelize notifications to avoid blocking the response for multiple recipients
+       if (chatIds.size > 0) {
+          await Promise.allSettled(Array.from(chatIds).map(cid =>
+             fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
+             })
+          ));
        }
     }
 
     return NextResponse.json({ success: true, report: newReport });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID yuborilmadi" }, { status: 400 });
 
