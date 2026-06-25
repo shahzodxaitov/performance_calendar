@@ -3,8 +3,13 @@ import { getCompanies } from "@/lib/data-store";
 
 export const dynamic = "force-dynamic";
 
+// ⚡ Bolt: Hoist static lookup arrays and use Set for faster lookups
+const WEEK_DAYS = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
+const MONTHS = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+const QUALIFIED_STATUS_IDS = new Set([82159474, 82159478, 82159486]);
+
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -21,7 +26,7 @@ export async function GET(request: NextRequest) {
     qualified_leads: 0,
     visits: 0,
     sales_amount: 0,
-    chart: [] as any[],
+    chart: [] as { name: string; leads: number; sales: number }[],
     status: "not_connected"
   };
 
@@ -33,19 +38,25 @@ export async function GET(request: NextRequest) {
   if (company && company.amocrm_domain && company.amocrm_access_token) {
     try {
       // Calculate timestamps based on period
+      // ⚡ Bolt: Reuse a single Date object to minimize allocations
+      const date = new Date();
+      const currentDay = date.getDate();
+      const endOfDay = Math.floor(date.setHours(23, 59, 59, 999) / 1000);
       let startOfDay = 0;
-      let endOfDay = Math.floor(new Date().setHours(23, 59, 59, 999) / 1000);
-      const now = new Date();
 
       if (period === "daily") {
-         startOfDay = Math.floor(new Date(new Date().setHours(0,0,0,0)).getTime() / 1000);
+        startOfDay = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
       } else if (period === "weekly") {
-         const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-         startOfDay = Math.floor(new Date(now.setDate(diff)).setHours(0,0,0,0) / 1000);
+        const day = date.getDay();
+        const diff = currentDay - day + (day === 0 ? -6 : 1);
+        date.setDate(diff);
+        startOfDay = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
       } else if (period === "monthly") {
-         startOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000);
+        date.setDate(1);
+        startOfDay = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
       } else if (period === "yearly") {
-         startOfDay = Math.floor(new Date(now.getFullYear(), 0, 1).getTime() / 1000);
+        date.setMonth(0, 1);
+        startOfDay = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
       }
 
       // Fetch up to 250 recent leads from amoCRM natively strictly for the active period
@@ -56,9 +67,9 @@ export async function GET(request: NextRequest) {
 
       if (response.ok) {
         const data = await response.json();
-        const leads: any[] = data?._embedded?.leads || [];
+        const leads: { status_id: number; price?: number; created_at: number }[] = data?._embedded?.leads || [];
 
-        let totalLeads = leads.length;
+        const totalLeads = leads.length;
         let qualifiedLeads = 0, visits = 0, salesAmount = 0;
 
         // Chart yasash uchun strukturalash
@@ -69,14 +80,16 @@ export async function GET(request: NextRequest) {
         } else if (period === "weekly") {
            ["Dush", "Sesh", "Chor", "Pay", "Jum", "Shan", "Yak"].forEach(d => chartData[d] = { leads: 0, sales: 0 });
         } else if (period === "monthly") {
-           for(let i=1; i<=Math.min(now.getDate(), 31); i++) chartData[`${i}-kun`] = { leads: 0, sales: 0 };
+           for(let i=1; i<=Math.min(currentDay, 31); i++) chartData[`${i}-kun`] = { leads: 0, sales: 0 };
         } else if (period === "yearly") {
-           ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"].forEach(d => chartData[d] = { leads: 0, sales: 0 });
+           MONTHS.forEach(d => chartData[d] = { leads: 0, sales: 0 });
         }
 
+        // ⚡ Bolt: Reuse a single Date object inside the loop to avoid allocations
+        const leadDate = new Date();
         leads.forEach(lead => {
           const status = lead.status_id;
-          if ([82159474, 82159478, 82159486].includes(status)) qualifiedLeads++;
+          if (QUALIFIED_STATUS_IDS.has(status)) qualifiedLeads++;
           if (status === 82159486) visits++;
           
           let isSale = false;
@@ -86,20 +99,18 @@ export async function GET(request: NextRequest) {
           }
 
           // Chart guruhlash
-          const leadDate = new Date(lead.created_at * 1000);
+          leadDate.setTime(lead.created_at * 1000);
           let key = "";
           if (period === "daily") {
             const hour = leadDate.getHours();
             const bucket = hour % 2 === 0 ? hour : hour - 1; 
             key = `${bucket < 10 ? '0'+bucket : bucket}:00`;
           } else if (period === "weekly") {
-            const arr = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
-            key = arr[leadDate.getDay()];
+            key = WEEK_DAYS[leadDate.getDay()];
           } else if (period === "monthly") {
             key = `${leadDate.getDate()}-kun`;
           } else if (period === "yearly") {
-            const arr = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
-            key = arr[leadDate.getMonth()];
+            key = MONTHS[leadDate.getMonth()];
           }
           
           if (chartData[key] !== undefined) {
@@ -127,7 +138,7 @@ export async function GET(request: NextRequest) {
         // Fallback to mock if token expired or invalid
         stats.status = "error_fetching";
       }
-    } catch (e) {
+    } catch {
       stats.status = "error_fetching";
     }
   } else {
