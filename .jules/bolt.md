@@ -1,0 +1,3 @@
+## 2025-05-15 - Optimizing Batch Reminders
+**Learning:** Batch operations that involve both local lookups and remote network requests can be significantly accelerated by combining O(N+M) Map lookups with parallelized async operations using `Promise.allSettled`. Linear search inside a loop (O(N*M)) becomes a bottleneck as task and team sizes grow, and sequential network requests (awaiting inside a loop) introduce cumulative latency.
+**Action:** Always use a Map for ID-based lookups in loops. Parallelize independent network requests using `Promise.allSettled` and ensure state updates are conditional on the success of those requests to maintain data integrity.
