@@ -1,0 +1,31 @@
+
+> kalendar@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.1.0
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.0.2:3000
+
+ ✓ Starting...
+ ⚠ Invalid next.config.ts options detected:
+ ⚠     Unrecognized key(s) in object: 'reactCompiler'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+
+   We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+   The following mandatory changes were made to your tsconfig.json:
+
+	- jsx was set to preserve (next.js implements its own optimized jsx transform)
+
+ ✓ Ready in 1905ms
+ ○ Compiling /tasks ...
+ ✓ Compiled /tasks in 8.6s (777 modules)
+ GET /tasks 200 in 9536ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1581ms (945 modules)
+ GET /login 200 in 1707ms
+ GET /login 200 in 25ms

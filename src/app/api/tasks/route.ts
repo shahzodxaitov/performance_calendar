@@ -39,8 +39,7 @@ ${type === "new" ? "✅ Platformada batafsil ko'ring" : type === "1day" ? "⚠�
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const companyId = searchParams.get("company_id") || "all";
+  const companyId = request.nextUrl.searchParams.get("company_id") || "all";
   let tasks = getTasks();
   if (companyId !== "all") {
     tasks = tasks.filter((t) => t.company_id === companyId);

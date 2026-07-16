@@ -1,0 +1,3 @@
+## 2025-05-14 - Task List and API Parameter Access Optimization
+**Learning:** In the tasks page, the list filtering and initials generation were being recalculated on every render, including those triggered by unrelated state changes (like modal visibility). Additionally, using `new URL(request.url)` in API routes is less efficient than using `request.nextUrl.searchParams` in Next.js environments.
+**Action:** Implement `useMemo` for task filtering, hoist search normalization outside the loop, add a cache for initials, and switch to `request.nextUrl.searchParams` for faster query parameter access.
