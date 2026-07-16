@@ -2,12 +2,11 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Plus, Search, Clock, AlertCircle, CheckCircle2, MoreHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { TaskModal } from "@/components/TaskModal";
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   todo: { label: "Kutishda", color: "var(--muted-foreground)", icon: Clock },
   in_progress: { label: "Jarayonda", color: "var(--accent-blue)", icon: Clock },
   review: { label: "Tekshiruv", color: "var(--accent-orange)", icon: AlertCircle },
@@ -17,6 +16,8 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
 const priorityLabel: Record<string, string> = {
   low: "🟢", normal: "🟡", high: "🟠", urgent: "🔴",
 };
+
+const initialsCache = new Map<string, string>();
 
 interface LocalTask {
   id: string;
@@ -56,12 +57,21 @@ export default function TasksPage() {
 
   function getInitials(name: string) {
     if (!name) return "?";
-    return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
+    const cached = initialsCache.get(name);
+    if (cached) return cached;
+    const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
+    initialsCache.set(name, initials);
+    return initials;
   }
 
-  const filtered = search
-    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()) || t.assignee_name.toLowerCase().includes(search.toLowerCase()))
-    : tasks;
+  const filtered = useMemo(() => {
+    if (!search) return tasks;
+    const s = search.toLowerCase();
+    return tasks.filter((t) =>
+      t.title.toLowerCase().includes(s) ||
+      t.assignee_name.toLowerCase().includes(s)
+    );
+  }, [tasks, search]);
 
   return (
     <div className="space-y-8 animate-in">
@@ -157,7 +167,7 @@ export default function TasksPage() {
                   <div className="text-[var(--muted-foreground)]">
                     <div className="text-[40px] mb-3">📋</div>
                     <div className="text-[15px] font-medium text-white mb-1">Vazifalar topilmadi</div>
-                    <div className="text-[13px]">Yangi vazifa qo'shish uchun yuqoridagi tugmani bosing.</div>
+                    <div className="text-[13px]">Yangi vazifa qo&apos;shish uchun yuqoridagi tugmani bosing.</div>
                   </div>
                 </td>
               </tr>
