@@ -83,7 +83,10 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-8 animate-in">
-      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      {/* ⚡ Bolt: Conditional rendering prevents mounting/rendering the modal and executing its effects when closed, reducing React fiber overhead */}
+      {isModalOpen && (
+        <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      )}
 
       {/* Header */}
       <section className="flex items-end justify-between">
@@ -91,7 +94,7 @@ export default function CalendarPage() {
           <h1 className="text-[32px] font-semibold text-white tracking-tight">
             {isAll ? "Kalendar" : `${selectedCompany.name} Kalendari`}
           </h1>
-          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo'yicha belgilangan ishlar sanasi.</p>
+          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo&apos;yicha belgilangan ishlar sanasi.</p>
         </div>
         {(role === "admin" || role === "manager") && (
           <button onClick={() => setIsModalOpen(true)} className="btn-primary">

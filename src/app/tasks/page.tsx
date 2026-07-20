@@ -4,7 +4,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
 import { useEffect, useState, useCallback } from "react";
 import { Plus, Search, Clock, AlertCircle, CheckCircle2, MoreHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { TaskModal } from "@/components/TaskModal";
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
@@ -65,7 +64,10 @@ export default function TasksPage() {
 
   return (
     <div className="space-y-8 animate-in">
-      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      {/* ⚡ Bolt: Conditional rendering prevents mounting/rendering the modal and executing its effects when closed, reducing React fiber overhead */}
+      {isModalOpen && (
+        <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      )}
 
       {/* Header */}
       <section className="flex items-start justify-between gap-3">
@@ -157,7 +159,7 @@ export default function TasksPage() {
                   <div className="text-[var(--muted-foreground)]">
                     <div className="text-[40px] mb-3">📋</div>
                     <div className="text-[15px] font-medium text-white mb-1">Vazifalar topilmadi</div>
-                    <div className="text-[13px]">Yangi vazifa qo'shish uchun yuqoridagi tugmani bosing.</div>
+                    <div className="text-[13px]">Yangi vazifa qo&apos;shish uchun yuqoridagi tugmani bosing.</div>
                   </div>
                 </td>
               </tr>
