@@ -76,16 +76,19 @@ export default function ReportsPage() {
 
   return (
     <>
-      <ReportGeneratorModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        companies={companies}
-        defaultCompanyId={isAll ? "" : selectedCompany.id}
-        onSuccess={(newReport: ReportData) => {
-          setReportsList([newReport, ...reportsList]);
-          setActiveTab(newReport.type);
-        }}
-      />
+      {/* ⚡ Bolt: Conditional rendering prevents mounting/rendering the modal and executing its effects when closed, reducing React fiber overhead */}
+      {isModalOpen && (
+        <ReportGeneratorModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          companies={companies}
+          defaultCompanyId={isAll ? "" : selectedCompany.id}
+          onSuccess={(newReport: ReportData) => {
+            setReportsList([newReport, ...reportsList]);
+            setActiveTab(newReport.type);
+          }}
+        />
+      )}
       <div className="space-y-6 animate-in">
         <section className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -145,7 +148,7 @@ export default function ReportsPage() {
                     <Send className="w-3.5 h-3.5" /> Telegram
                   </button>
                   <Link href={`/reports/share/${report.share_token}`} className="btn-secondary text-[12px] py-2 px-4">
-                    Ko'rish <ChevronRight className="w-3.5 h-3.5" />
+                    Ko&apos;rish <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
