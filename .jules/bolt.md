@@ -1,0 +1,3 @@
+## 2026-04-13 - Parallelizing Notifications & O(N+M) Map Lookups in check-reminders
+**Learning:** Sequential await-in-loop patterns for HTTP/API calls (like dispatching Telegram messages) scale poorly as task volume grows, taking $O(K \times T)$ time where $T$ is the Telegram API round-trip latency. Refactoring lookups to $O(N+M)$ maps and parallelizing dispatches with `Promise.allSettled` safely drops execution time down to $O(T)$ while keeping updates robust.
+**Action:** When handling batch reminders or bulk notifications, map target metadata beforehand and perform dispatches concurrently via `Promise.allSettled` while checking outcome states before persisting updates.
