@@ -1,0 +1,3 @@
+## 2026-04-13 - O(1) Lookups and Parallelized Notification Delivery in Reminders Batch API
+**Learning:** Sequential asynchronous operations inside processing loops significantly limit API throughput and scale poorly. Parallelizing outbound fetch calls using `Promise.allSettled` transforms the route runtime from O(K * Latency) to O(Latency). Simultaneously, replacing nested O(N * M) searches with Map-based O(1) lookups avoids high CPU utilization under load.
+**Action:** Always map array-based lookups to pre-built Maps before starting loops, and collect outbound API calls to process them concurrently with settled status verification.
