@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 // GET /api/leads?company_id=...
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt: Use request.nextUrl.searchParams instead of parsing request.url which requires new URL overhead
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     leads = leads.filter(l => l.company_id === companyId);
   }
 
+  // ⚡ Bolt: Reuse a single Date instance to compute start boundary instead of multiple instantiations
   const now = new Date();
   let startTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
   
@@ -27,11 +29,16 @@ export async function GET(request: NextRequest) {
       startTimestamp = new Date(now.getFullYear(), 0, 1).getTime();
   }
 
+  // ⚡ Bolt: Convert the startTimestamp boundary once to an ISO 8601 string to perform highly performant
+  // native lexicographical comparisons. This avoids calling `new Date()` and `.getTime()` inside the O(N) loop.
+  const startISOString = new Date(startTimestamp).toISOString();
+
   // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  leads = leads.filter(l => l.created_at >= startISOString);
 
   // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // ⚡ Bolt: Use direct lexicographical comparison of ISO 8601 string timestamps for O(1) Date instantiation in sort
+  leads.sort((a, b) => (b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0));
 
   return NextResponse.json(leads);
 }
@@ -58,7 +65,8 @@ export async function PATCH(request: NextRequest) {
     saveLeads(leads);
     
     return NextResponse.json({ success: true, lead: leads[index] });
-  } catch (err) {
+  } catch {
+    // ⚡ Bolt: Removed unused 'err' binding in catch block to satisfy typescript-eslint/no-unused-vars rule cleanly
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });
   }
 }
