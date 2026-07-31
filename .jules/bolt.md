@@ -1,0 +1,3 @@
+## 2026-04-13 - State Integrity in Async Batch Processing
+**Learning:** Parallelizing state-modifying tasks (like sending Telegram notifications) with `Promise.allSettled` can dramatically improve API response latency, but we must only flag items as notified/processed if the external call succeeds. Storing and calculating a baseline timestamp once at the start of a batch endpoint avoids timezone inconsistencies during execution.
+**Action:** Always map requests to concurrent promises and perform state updates in success handlers inside `Promise.allSettled` to maintain reliable persistence states.
