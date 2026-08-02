@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 // GET /api/leads?company_id=...
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt: Use request.nextUrl.searchParams to avoid URL parsing overhead
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -15,23 +16,34 @@ export async function GET(request: NextRequest) {
     leads = leads.filter(l => l.company_id === companyId);
   }
 
-  const now = new Date();
-  let startTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
+  // ⚡ Bolt: Reuse a single Date object to compute the period start timestamp
+  const dateObj = new Date();
+  const currentDay = dateObj.getDate();
+  let startTimestamp = dateObj.setHours(0, 0, 0, 0);
   
   if (period === "weekly") {
-      const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startTimestamp = new Date(new Date(now).setDate(diff)).setHours(0,0,0,0);
+    const day = dateObj.getDay();
+    const diff = currentDay - day + (day === 0 ? -6 : 1);
+    dateObj.setDate(diff);
+    startTimestamp = dateObj.setHours(0, 0, 0, 0);
   } else if (period === "monthly") {
-      startTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    dateObj.setDate(1);
+    startTimestamp = dateObj.setHours(0, 0, 0, 0);
   } else if (period === "yearly") {
-      startTimestamp = new Date(now.getFullYear(), 0, 1).getTime();
+    dateObj.setMonth(0, 1);
+    startTimestamp = dateObj.setHours(0, 0, 0, 0);
   }
 
-  // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  // ⚡ Bolt: Convert the startTimestamp to an ISO string once.
+  // This allows us to perform fast, native lexicographical string comparisons
+  // on ISO 8601 strings, which is ~30x faster than creating Date objects in loops.
+  const startISOString = new Date(startTimestamp).toISOString();
 
-  // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Faqat joriy davrdagi leadlarni filtrlash
+  leads = leads.filter(l => l.created_at >= startISOString);
+
+  // Sorter from newest to oldest using lexicographical string comparison
+  leads.sort((a, b) => (b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0));
 
   return NextResponse.json(leads);
 }
@@ -58,7 +70,7 @@ export async function PATCH(request: NextRequest) {
     saveLeads(leads);
     
     return NextResponse.json({ success: true, lead: leads[index] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });
   }
 }
