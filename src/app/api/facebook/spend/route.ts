@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCompanies } from "@/lib/data-store";
 
 // Simulated Facebook Graph API Adapter
+// ⚡ Bolt: Optimizing GET by replacing 'new URL(request.url)' with 'request.nextUrl.searchParams'
+// which is a pre-parsed NextRequest property, avoiding the overhead of constructing and parsing a new URL object on every request.
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
+  // ⚡ Bolt: Direct string comparison for preset mapping is fast and lightweight
   let datePreset = "today";
   if (period === "weekly") datePreset = "last_7d";
   if (period === "monthly") datePreset = "this_month";
