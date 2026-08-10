@@ -1,7 +1,7 @@
 // Telegram Bot — Polling Mode with Next.js API Sync
 // Usage: node scripts/telegram-poll.mjs
 
-const BOT_TOKEN = "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const APP_URL = "http://localhost:3000";
 
 let offset = 0;
