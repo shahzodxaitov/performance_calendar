@@ -1,0 +1,3 @@
+## 2026-04-13 - Memoizing Recharts Hover Render Cascades
+**Learning:** Recharts components use active mouse tracking for tooltips and hover crosshairs, triggering rapid state updates and cascading React re-renders on the parent component. Any non-memoized O(N) calculations (such as list filters or formatted display statistic models) inside the host render loop are re-allocated and computed repeatedly on every mouse-move event.
+**Action:** Always wrap companion UI list configurations, statistics objects, and array-filtering computations in `useMemo` hooks inside pages/components that host interactive Recharts visualizations to preserve render path efficiency.
