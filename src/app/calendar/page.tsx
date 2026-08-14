@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/context/CompanyContext";
@@ -55,31 +55,48 @@ export default function CalendarPage() {
   }, [selectedCompany.id]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    let isMounted = true;
+    const loadTasks = async () => {
+      try {
+        const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}`);
+        const data = await res.json();
+        if (isMounted && data.tasks) setTasks(data.tasks);
+      } catch {
+        if (isMounted) setTasks([]);
+      }
+    };
+    loadTasks();
+    return () => { isMounted = false; };
+  }, [selectedCompany.id]);
 
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = getFirstDayOfMonth(year, month);
+  const daysInMonth = useMemo(() => getDaysInMonth(year, month), [year, month]);
+  const firstDay = useMemo(() => getFirstDayOfMonth(year, month), [year, month]);
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const prev = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const next = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
-  const days = [];
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let d = 1; d <= daysInMonth; d++) days.push(d);
+  // ⚡ Bolt: Memoize calendar grid array to avoid re-allocating array on every render
+  const days = useMemo(() => {
+    const list: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) list.push(null);
+    for (let d = 1; d <= daysInMonth; d++) list.push(d);
+    return list;
+  }, [firstDay, daysInMonth]);
 
-  // Group tasks by due_date
-  const eventsByDate = tasks.reduce((acc, task) => {
-    if (!task.due_date) return acc;
-    if (!acc[task.due_date]) acc[task.due_date] = [];
-    acc[task.due_date].push({
-      title: task.title,
-      assignee: task.assignee_name,
-      color: statusColors[task.status] || "var(--accent-blue)"
-    });
-    return acc;
-  }, {} as Record<string, { title: string; assignee: string; color: string }[]>);
+  // ⚡ Bolt: Group tasks by due_date inside useMemo to avoid O(N) iteration on every render
+  const eventsByDate = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      if (!task.due_date) return acc;
+      if (!acc[task.due_date]) acc[task.due_date] = [];
+      acc[task.due_date].push({
+        title: task.title,
+        assignee: task.assignee_name,
+        color: statusColors[task.status] || "var(--accent-blue)"
+      });
+      return acc;
+    }, {} as Record<string, { title: string; assignee: string; color: string }[]>);
+  }, [tasks]);
 
   return (
     <div className="space-y-8 animate-in">
@@ -91,7 +108,7 @@ export default function CalendarPage() {
           <h1 className="text-[32px] font-semibold text-white tracking-tight">
             {isAll ? "Kalendar" : `${selectedCompany.name} Kalendari`}
           </h1>
-          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo'yicha belgilangan ishlar sanasi.</p>
+          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo&apos;yicha belgilangan ishlar sanasi.</p>
         </div>
         {(role === "admin" || role === "manager") && (
           <button onClick={() => setIsModalOpen(true)} className="btn-primary">
