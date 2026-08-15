@@ -13,6 +13,11 @@ interface TeamMember {
   avatar_color: string;
 }
 
+// ⚡ Bolt: Hoisted getInitials helper function outside component scope to avoid re-creation on every render
+function getInitials(name: string) {
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
+}
+
 export default function TeamPage() {
   const { role } = useAuth();
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -82,10 +87,6 @@ export default function TeamPage() {
       }
     }
   };
-
-  function getInitials(name: string) {
-    return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
-  }
 
   return (
     <div className="space-y-8 animate-in max-w-5xl">
