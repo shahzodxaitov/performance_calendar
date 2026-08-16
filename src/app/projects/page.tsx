@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Trash2, Link } from "lucide-react";
 
 export default function ProjectsPage() {
@@ -13,8 +13,8 @@ export default function ProjectsPage() {
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Filter out the 'all' option from Context
-  const projectList = companies.filter(c => c.id !== "all");
+  // ⚡ Bolt: Memoize filtered company list to avoid unnecessary array allocations during re-renders (e.g. typing in input)
+  const projectList = useMemo(() => companies.filter(c => c.id !== "all"), [companies]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +65,7 @@ export default function ProjectsPage() {
       {/* Add Form */}
       {isAdding && (
         <section className="glass-card p-6 animate-in slide-in-from-top-4">
-          <h3 className="text-[15px] font-semibold text-white mb-4">Loyiha qo'shish</h3>
+          <h3 className="text-[15px] font-semibold text-white mb-4">Loyiha qo&apos;shish</h3>
           <form onSubmit={handleAdd} className="flex gap-4 items-end">
             <div className="flex-1">
               <label className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5 block">Loyiha Nomi</label>
@@ -85,7 +85,7 @@ export default function ProjectsPage() {
       {/* List */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {projectList.length === 0 ? (
-          <div className="col-span-full py-16 text-center text-[var(--muted-foreground)]"> Loyihalar yo'q </div>
+          <div className="col-span-full py-16 text-center text-[var(--muted-foreground)]"> Loyihalar yo&apos;q </div>
         ) : projectList.map(project => (
           <div key={project.id} className="glass-card p-5 group transition-all hover:bg-white/[0.04]">
             <div className="flex justify-between items-start mb-4">
