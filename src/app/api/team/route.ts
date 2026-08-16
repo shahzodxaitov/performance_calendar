@@ -65,8 +65,9 @@ export async function PATCH(request: NextRequest) {
 // DELETE - A'zoni o'chirish
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-      const id = searchParams.get("id");
+    // ⚡ Bolt: Use request.nextUrl.searchParams instead of new URL(request.url) parsing
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
       if (!id) return NextResponse.json({ error: "Id kerak" }, { status: 400 });
 
       let team = getTeamMembers();
