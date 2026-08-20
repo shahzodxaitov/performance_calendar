@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Users, Target, TrendingUp, DollarSign, ArrowUpRight, CalendarDays, BarChart3, Activity } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -38,19 +38,42 @@ interface ClientData {
   period: string;
 }
 
-const statusColors: Record<string, string> = {
+// Performance Optimization: Hoisted static lookups outside component scope to avoid allocations on re-render
+const STATUS_COLORS: Record<string, string> = {
   Yangi: "#0071e3",
   Aloqada: "#ff9f0a",
   "Sotib oldi": "#30d158",
   "Rad etdi": "#ff375f",
 };
 
-const taskStatusMap: Record<string, { label: string; color: string; bg: string }> = {
+const TASK_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   todo: { label: "Kutilmoqda", color: "#86868b", bg: "#86868b20" },
   in_progress: { label: "Jarayonda", color: "#0071e3", bg: "#0071e320" },
   review: { label: "Tekshiruvda", color: "#bf5af2", bg: "#bf5af220" },
   done: { label: "Bajarildi", color: "#30d158", bg: "#30d15820" },
 };
+
+const PERIOD_LABELS: Record<string, string> = {
+  daily: "Bugungi",
+  weekly: "Haftalik",
+  monthly: "Oylik",
+  yearly: "Yillik",
+};
+
+const PERIOD_OPTIONS = [
+  { id: "daily", label: "Bugun" },
+  { id: "weekly", label: "Hafta" },
+  { id: "monthly", label: "Oy" },
+  { id: "yearly", label: "Yil" },
+];
+
+// Performance Optimization: Hoisted pure function outside component scope
+function getInitials(name: string): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
 
 export default function ClientPortalPage() {
   const { token } = useParams<{ token: string }>();
@@ -59,23 +82,72 @@ export default function ClientPortalPage() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(() => {
-    setLoading(true);
+  useEffect(() => {
+    let isMounted = true;
     fetch(`/api/client/${token}?period=${period}`)
       .then(res => {
         if (!res.ok) throw new Error("not found");
         return res.json();
       })
-      .then(d => { setData(d); setError(false); })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+      .then(d => {
+        if (isMounted) {
+          setData(d);
+          setError(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setError(true);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    const interval = setInterval(() => {
+      fetch(`/api/client/${token}?period=${period}`)
+        .then(res => {
+          if (!res.ok) return;
+          return res.json();
+        })
+        .then(d => {
+          if (d && isMounted) setData(d);
+        })
+        .catch(() => {});
+    }, 60000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [token, period]);
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 60000); // Har 60 sekundda yangilanadi
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  const { company, amoStats, leads, tasks } = data || {};
+
+  // Performance Optimization: Memoize stats list to avoid re-allocating array & objects during hover / re-renders
+  const stats = useMemo(() => {
+    if (!amoStats) return [];
+    const conversionRate = amoStats.total_leads > 0 ? Math.round((amoStats.qualified_leads / amoStats.total_leads) * 100) : 0;
+    const salesFormatted = amoStats.sales_amount > 1000000
+      ? (amoStats.sales_amount / 1000000).toFixed(1) + "M"
+      : amoStats.sales_amount.toLocaleString();
+
+    return [
+      { title: "Jami Leadlar", value: amoStats.total_leads.toString(), icon: Users, color: "#0071e3" },
+      { title: "Sifatli Leadlar", value: amoStats.qualified_leads.toString(), icon: Target, color: "#bf5af2" },
+      { title: "Konversiya", value: `${conversionRate}%`, icon: TrendingUp, color: "#34c759" },
+      { title: "Uchrashuvlar", value: amoStats.visits.toString(), icon: CalendarDays, color: "#ff9f0a" },
+      { title: "Sotuvlar", value: salesFormatted, icon: DollarSign, color: "#30d158" },
+    ];
+  }, [amoStats]);
+
+  // Performance Optimization: Memoize active tasks count calculation
+  const activeTasksCount = useMemo(() => {
+    if (!tasks) return 0;
+    let count = 0;
+    for (let i = 0; i < tasks.length; i++) {
+      if (tasks[i].status !== "done") count++;
+    }
+    return count;
+  }, [tasks]);
 
   if (error) {
     return (
@@ -85,40 +157,22 @@ export default function ClientPortalPage() {
             <span className="text-[28px]">🔒</span>
           </div>
           <h1 className="text-[24px] font-semibold text-white">Loyiha topilmadi</h1>
-          <p className="text-[14px] text-[#86868b]">Bu link noto'g'ri yoki muddati tugagan.</p>
+          <p className="text-[14px] text-[#86868b]">Bu link noto&apos;g&apos;ri yoki muddati tugagan.</p>
         </div>
       </div>
     );
   }
 
-  if (!data || loading) {
+  if (!data || loading || !company || !amoStats) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ fontFamily: "'Inter', sans-serif" }}>
         <div className="text-center space-y-3">
           <div className="w-10 h-10 rounded-full border-2 border-[#0071e3] border-t-transparent animate-spin mx-auto" />
-          <p className="text-[13px] text-[#86868b]">Ma'lumotlar yuklanmoqda...</p>
+          <p className="text-[13px] text-[#86868b]">Ma&apos;lumotlar yuklanmoqda...</p>
         </div>
       </div>
     );
   }
-
-  const { company, amoStats, leads, tasks } = data;
-  const conversionRate = amoStats.total_leads > 0 ? Math.round((amoStats.qualified_leads / amoStats.total_leads) * 100) : 0;
-
-  const stats = [
-    { title: "Jami Leadlar", value: amoStats.total_leads.toString(), icon: Users, color: "#0071e3" },
-    { title: "Sifatli Leadlar", value: amoStats.qualified_leads.toString(), icon: Target, color: "#bf5af2" },
-    { title: "Konversiya", value: `${conversionRate}%`, icon: TrendingUp, color: "#34c759" },
-    { title: "Uchrashuvlar", value: amoStats.visits.toString(), icon: CalendarDays, color: "#ff9f0a" },
-    { title: "Sotuvlar", value: amoStats.sales_amount > 1000000 ? (amoStats.sales_amount / 1000000).toFixed(1) + "M" : amoStats.sales_amount.toLocaleString(), icon: DollarSign, color: "#30d158" },
-  ];
-
-  const periodLabels: Record<string, string> = {
-    daily: "Bugungi",
-    weekly: "Haftalik",
-    monthly: "Oylik",
-    yearly: "Yillik",
-  };
 
   return (
     <div className="min-h-screen" style={{ fontFamily: "'Inter', -apple-system, sans-serif" }}>
@@ -133,18 +187,13 @@ export default function ClientPortalPage() {
               <div className="text-[15px] font-semibold text-white">{company.name}</div>
               <div className="text-[11px] text-[#86868b] flex items-center gap-1.5">
                 <Activity className="w-3 h-3 text-[#30d158]" />
-                {periodLabels[period]} hisobot · Jonli
+                {PERIOD_LABELS[period]} hisobot · Jonli
               </div>
             </div>
           </div>
 
           <div className="flex bg-white/[0.04] p-1 rounded-lg border border-white/[0.06]">
-            {[
-              { id: "daily", label: "Bugun" },
-              { id: "weekly", label: "Hafta" },
-              { id: "monthly", label: "Oy" },
-              { id: "yearly", label: "Yil" },
-            ].map(p => (
+            {PERIOD_OPTIONS.map(p => (
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
@@ -190,7 +239,7 @@ export default function ClientPortalPage() {
               <h2 className="text-[17px] font-semibold text-white flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-[#0071e3]" /> Leadlar va Sotuvlar Oqimi
               </h2>
-              <span className="text-[11px] text-[#86868b] font-medium">{periodLabels[period]}</span>
+              <span className="text-[11px] text-[#86868b] font-medium">{PERIOD_LABELS[period]}</span>
             </div>
             <div className="h-[300px] flex-1">
               <ResponsiveContainer width="100%" height="100%">
@@ -223,13 +272,13 @@ export default function ClientPortalPage() {
           {/* So'nggi Leadlar */}
           <section className="lg:col-span-2 rounded-2xl bg-[#1c1c1e]/80 border border-white/[0.06] p-6 flex flex-col">
             <h2 className="text-[17px] font-semibold text-white mb-6 flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#bf5af2]" /> So'nggi Murojaatlar
+              <Users className="w-4 h-4 text-[#bf5af2]" /> So&apos;nggi Murojaatlar
             </h2>
             <div className="space-y-1 flex-1 overflow-y-auto pr-1 custom-scrollbar">
-              {leads.length > 0 ? leads.map((lead, i) => (
+              {leads && leads.length > 0 ? leads.map((lead, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-[14px] hover:bg-white/[0.04] transition-colors">
                   <div className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-[12px] font-semibold text-white shrink-0">
-                    {lead.name.split(" ").map(n => n[0]).join("")}
+                    {getInitials(lead.name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-medium text-white truncate">{lead.name}</div>
@@ -242,8 +291,8 @@ export default function ClientPortalPage() {
                   <span
                     className="text-[10px] font-semibold px-2 py-1 rounded-md shrink-0"
                     style={{
-                      color: statusColors[lead.status] || "#86868b",
-                      backgroundColor: `color-mix(in srgb, ${statusColors[lead.status] || "#86868b"} 12%, transparent)`,
+                      color: STATUS_COLORS[lead.status] || "#86868b",
+                      backgroundColor: `color-mix(in srgb, ${STATUS_COLORS[lead.status] || "#86868b"} 12%, transparent)`,
                     }}
                   >
                     {lead.status}
@@ -268,13 +317,13 @@ export default function ClientPortalPage() {
               <p className="text-[12px] text-[#86868b] mt-1">Jamoamiz tomonidan loyihangiz uchun qilinayotgan vazifalar</p>
             </div>
             <div className="text-[12px] font-medium bg-white/[0.04] px-3 py-1.5 rounded-lg text-white">
-              {tasks?.filter(t => t.status !== 'done').length || 0} ta faol
+              {activeTasksCount} ta faol
             </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {tasks && tasks.length > 0 ? tasks.map((task) => {
-              const statusMeta = taskStatusMap[task.status] || taskStatusMap.todo;
+              const statusMeta = TASK_STATUS_MAP[task.status] || TASK_STATUS_MAP.todo;
               return (
                 <div key={task.id} className="p-4 rounded-[14px] bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors relative overflow-hidden group">
                   {task.status === 'done' && (
