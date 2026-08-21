@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/context/CompanyContext";
@@ -44,6 +44,27 @@ export default function CalendarPage() {
   const [tasks, setTasks] = useState<LocalTask[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function loadTasks() {
+      try {
+        const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}`);
+        const data = await res.json();
+        if (isMounted && data.tasks) {
+          setTasks(data.tasks);
+        }
+      } catch {
+        if (isMounted) {
+          setTasks([]);
+        }
+      }
+    }
+    loadTasks();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCompany.id]);
+
   const fetchTasks = useCallback(async () => {
     try {
       const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}`);
@@ -54,10 +75,6 @@ export default function CalendarPage() {
     }
   }, [selectedCompany.id]);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -65,25 +82,34 @@ export default function CalendarPage() {
   const prev = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const next = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
-  const days = [];
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let d = 1; d <= daysInMonth; d++) days.push(d);
+  // ⚡ Bolt Optimization: Memoize calendar days array calculation to avoid re-calculating on un-related state changes (e.g., modal toggle)
+  const days = useMemo(() => {
+    const daysArr: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) daysArr.push(null);
+    for (let d = 1; d <= daysInMonth; d++) daysArr.push(d);
+    return daysArr;
+  }, [firstDay, daysInMonth]);
 
-  // Group tasks by due_date
-  const eventsByDate = tasks.reduce((acc, task) => {
-    if (!task.due_date) return acc;
-    if (!acc[task.due_date]) acc[task.due_date] = [];
-    acc[task.due_date].push({
-      title: task.title,
-      assignee: task.assignee_name,
-      color: statusColors[task.status] || "var(--accent-blue)"
-    });
-    return acc;
-  }, {} as Record<string, { title: string; assignee: string; color: string }[]>);
+  // ⚡ Bolt Optimization: Memoize task grouping by due_date to avoid O(N) array iterations on every re-render cycle
+  const eventsByDate = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      if (!task.due_date) return acc;
+      if (!acc[task.due_date]) acc[task.due_date] = [];
+      acc[task.due_date].push({
+        title: task.title,
+        assignee: task.assignee_name,
+        color: statusColors[task.status] || "var(--accent-blue)"
+      });
+      return acc;
+    }, {} as Record<string, { title: string; assignee: string; color: string }[]>);
+  }, [tasks]);
 
   return (
     <div className="space-y-8 animate-in">
-      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      {/* ⚡ Bolt Optimization: Conditionally render modal to avoid mounting fiber node & state when modal is closed */}
+      {isModalOpen && (
+        <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      )}
 
       {/* Header */}
       <section className="flex items-end justify-between">
@@ -91,7 +117,7 @@ export default function CalendarPage() {
           <h1 className="text-[32px] font-semibold text-white tracking-tight">
             {isAll ? "Kalendar" : `${selectedCompany.name} Kalendari`}
           </h1>
-          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo'yicha belgilangan ishlar sanasi.</p>
+          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo&apos;yicha belgilangan ishlar sanasi.</p>
         </div>
         {(role === "admin" || role === "manager") && (
           <button onClick={() => setIsModalOpen(true)} className="btn-primary">
