@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Send, CheckCircle2 } from "lucide-react";
 
 export function TelegramConnect() {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const [chatId, setChatId] = useState("");
   const [success, setSuccess] = useState(false);
 
@@ -27,13 +27,16 @@ export function TelegramConnect() {
       const res = await fetch("/api/team");
       const data = await res.json();
       if (data.team) {
-        for (const m of data.team) {
-          await fetch("/api/team", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: m.id, chat_id: chatId }),
-          });
-        }
+        // ⚡ Bolt: Parallelize team member updates with Promise.allSettled to eliminate sequential HTTP round-trip latency
+        await Promise.allSettled(
+          data.team.map((m: { id: string }) =>
+            fetch("/api/team", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: m.id, chat_id: chatId }),
+            })
+          )
+        );
         setSuccess(true);
       }
     }
@@ -49,7 +52,7 @@ export function TelegramConnect() {
       </div>
       
       <p className="text-sm text-muted-foreground leading-relaxed">
-        Botdan xabarlarni olish uchun Telegram'da botga <b>/start</b> buyrug'ini yuboring va bot sizga bergan <b>Chat ID</b> raqamini pastga kiriting.
+        Botdan xabarlarni olish uchun Telegram&apos;da botga <b>/start</b> buyrug&apos;ini yuboring va bot sizga bergan <b>Chat ID</b> raqamini pastga kiriting.
       </p>
 
       {success ? (
