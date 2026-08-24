@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 
 export interface Company {
   id: string;
@@ -34,7 +34,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [companies, setCompanies] = useState<Company[]>([defaultCompany]);
   const [selectedCompany, setSelectedCompany] = useState<Company>(defaultCompany);
 
-  const refreshCompanies = async () => {
+  // ⚡ Bolt Optimization: Wrap refreshCompanies in useCallback to keep callback reference stable
+  const refreshCompanies = useCallback(async () => {
     try {
       const res = await fetch("/api/companies");
       const data = await res.json();
@@ -44,16 +45,42 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Loyihalarni yuklashda xato:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshCompanies();
+    let isMounted = true;
+    fetch("/api/companies")
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.companies) {
+          setCompanies([defaultCompany, ...data.companies]);
+        }
+      })
+      .catch((err) => {
+        console.error("Loyihalarni yuklashda xato:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const isAll = selectedCompany.id === "all";
 
+  // ⚡ Bolt Optimization: Memoize context value object to prevent re-rendering all application components consuming useCompany on parent renders
+  const contextValue = useMemo(
+    () => ({
+      companies,
+      selectedCompany,
+      setSelectedCompany,
+      isAll,
+      refreshCompanies,
+    }),
+    [companies, selectedCompany, isAll, refreshCompanies]
+  );
+
   return (
-    <CompanyContext.Provider value={{ companies, selectedCompany, setSelectedCompany, isAll, refreshCompanies }}>
+    <CompanyContext.Provider value={contextValue}>
       {children}
     </CompanyContext.Provider>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FileBarChart, Calendar, TrendingUp, Send, Plus, ArrowUpRight, ArrowDownRight, ChevronRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCompany } from "@/context/CompanyContext";
@@ -21,28 +21,28 @@ export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportType>("daily");
   const { selectedCompany, isAll, companies } = useCompany();
   const [fbAds, setFbAds] = useState({ spend: 0, cpc: 0, status: "not_connected" });
-  const [reportsList, setReportsList] = useState<any[]>([]);
+  const [reportsList, setReportsList] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchReports = async () => {
-    setLoading(true);
-    try {
-      const url = isAll ? "/api/reports" : `/api/reports?company_id=${selectedCompany.id}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setReportsList(data.reports);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchReports();
+    let isMounted = true;
+    const url = isAll ? "/api/reports" : `/api/reports?company_id=${selectedCompany.id}`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success) {
+          setReportsList(data.reports);
+        }
+      })
+      .catch((err) => console.error(err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedCompany.id, isAll]);
 
   useEffect(() => {
@@ -52,7 +52,11 @@ export default function ReportsPage() {
       .catch(() => {});
   }, [selectedCompany.id, activeTab]);
 
-  const filtered = reportsList.filter(r => r.type === activeTab);
+  // ⚡ Bolt Optimization: Memoize filtered reports list to avoid array allocations during re-renders
+  const filtered = useMemo(
+    () => reportsList.filter((r) => r.type === activeTab),
+    [reportsList, activeTab]
+  );
 
   const copyLink = (token: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/reports/share/${token}`);
@@ -69,23 +73,26 @@ export default function ReportsPage() {
       } else {
         alert(data.error);
       }
-    } catch (err) {
+    } catch {
       alert("O'chirishda xatolik yuz berdi");
     }
   };
 
   return (
     <>
-      <ReportGeneratorModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        companies={companies}
-        defaultCompanyId={isAll ? "" : selectedCompany.id}
-        onSuccess={(newReport: ReportData) => {
-          setReportsList([newReport, ...reportsList]);
-          setActiveTab(newReport.type);
-        }}
-      />
+      {/* ⚡ Bolt Optimization: Conditionally render ReportGeneratorModal to avoid fiber mounting and hook execution overhead when closed */}
+      {isModalOpen && (
+        <ReportGeneratorModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          companies={companies}
+          defaultCompanyId={isAll ? "" : selectedCompany.id}
+          onSuccess={(newReport: ReportData) => {
+            setReportsList([newReport, ...reportsList]);
+            setActiveTab(newReport.type);
+          }}
+        />
+      )}
       <div className="space-y-6 animate-in">
         <section className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -145,7 +152,7 @@ export default function ReportsPage() {
                     <Send className="w-3.5 h-3.5" /> Telegram
                   </button>
                   <Link href={`/reports/share/${report.share_token}`} className="btn-secondary text-[12px] py-2 px-4">
-                    Ko'rish <ChevronRight className="w-3.5 h-3.5" />
+                    Ko&apos;rish <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
