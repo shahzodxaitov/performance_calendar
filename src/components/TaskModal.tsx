@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { X, Save } from "lucide-react";
 import { useCompany } from "@/context/CompanyContext";
-import { cn } from "@/lib/utils";
 
 interface TeamMember {
   id: string;
@@ -17,6 +16,11 @@ interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onTaskCreated: () => void;
+}
+
+// ⚡ Bolt: Hoist pure helper function outside component scope to avoid function re-allocation and GC overhead on every render cycle.
+function getInitials(name: string) {
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
 }
 
 export function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalProps) {
@@ -47,10 +51,6 @@ export function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalProps) {
 
   const selectedMember = teamMembers.find((m) => m.id === assigneeId);
   const selectedCompanyObj = companies.find((c) => c.id === companyId);
-
-  function getInitials(name: string) {
-    return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +83,7 @@ export function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalProps) {
       } else {
         alert("Xatolik: " + (data.error || "Noma'lum"));
       }
-    } catch (err) {
+    } catch {
       alert("Tarmoq xatoligi");
     }
     setLoading(false);
@@ -96,7 +96,7 @@ export function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalProps) {
         <div className="px-6 py-5 border-b border-white/[0.06] flex items-center justify-between">
           <div>
             <h2 className="text-[17px] font-semibold text-white">Yangi Vazifa</h2>
-            <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">Jamoa a'zosiga vazifa berish</p>
+            <p className="text-[12px] text-[var(--muted-foreground)] mt-0.5">Jamoa a&apos;zosiga vazifa berish</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/[0.06] text-[var(--muted-foreground)] hover:text-white transition-colors">
             <X className="w-5 h-5" />
@@ -167,7 +167,7 @@ export function TaskModal({ isOpen, onClose, onTaskCreated }: TaskModalProps) {
                 className="w-full h-[42px] rounded-[12px] bg-white/[0.04] border border-white/[0.08] px-4 text-[13px] text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)]/40 transition-all"
               >
                 <option value="low">🟢 Past</option>
-                <option value="normal">🟡 O'rta</option>
+                <option value="normal">🟡 O&apos;rta</option>
                 <option value="high">🟠 Yuqori</option>
                 <option value="urgent">🔴 Shoshilinch</option>
               </select>
