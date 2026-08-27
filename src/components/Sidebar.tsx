@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { LayoutDashboard, Calendar, ClipboardList, TrendingUp, Settings, LogOut, FileBarChart, Users, FolderKanban, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -21,10 +21,11 @@ function NavContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { role, signOut } = useAuth();
 
-  const filteredItems = navItems.filter(item => {
-    if (!role) return false;
-    return item.roles.includes(role);
-  });
+  // ⚡ Bolt: Memoize filtered navigation items to prevent redundant array allocations and array filtering operations on every render/route change
+  const filteredItems = useMemo(() => {
+    if (!role) return [];
+    return navItems.filter((item) => item.roles.includes(role));
+  }, [role]);
 
   return (
     <>
