@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getReports, saveReports, getCompanies, getTasks, getLeads, type ReportData } from "@/lib/data-store";
+import { getReports, saveReports, getCompanies, getTasks, getLeads, getTeamMembers, type ReportData } from "@/lib/data-store";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const companyId = searchParams.get("company_id");
-  const token = searchParams.get("token");
+  // ⚡ Bolt: Use request.nextUrl.searchParams to avoid URL constructor overhead
+  const companyId = request.nextUrl.searchParams.get("company_id");
+  const token = request.nextUrl.searchParams.get("token");
   
   let reports = getReports();
   
@@ -20,8 +21,9 @@ export async function GET(request: NextRequest) {
     reports = reports.filter(r => r.company_id === companyId);
   }
   
-  // Sort by created_at desc
-  reports.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // ⚡ Bolt: Fast lexicographical string comparison for ISO 8601 timestamps (created_at)
+  // Avoids Date heap allocations on every sort comparison
+  reports.sort((a, b) => (b.created_at > a.created_at ? 1 : b.created_at < a.created_at ? -1 : 0));
   
   return NextResponse.json({ success: true, reports });
 }
@@ -41,10 +43,13 @@ export async function POST(request: NextRequest) {
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(end_date);
     endDate.setHours(23, 59, 59, 999);
+
+    const startDateIso = startDate.toISOString();
+    const endDateIso = endDate.toISOString();
     
-    // Compute data from db
-    const leads = getLeads().filter(l => l.company_id === company_id && new Date(l.created_at) >= startDate && new Date(l.created_at) <= endDate);
-    const tasks = getTasks().filter(t => t.company_id === company_id && new Date(t.created_at) >= startDate && new Date(t.created_at) <= endDate);
+    // ⚡ Bolt: Fast string boundary comparison for ISO timestamps instead of allocating Date objects inside loops
+    const leads = getLeads().filter(l => l.company_id === company_id && l.created_at >= startDateIso && l.created_at <= endDateIso);
+    const tasks = getTasks().filter(t => t.company_id === company_id && t.created_at >= startDateIso && t.created_at <= endDateIso);
     
     const totalLeads = leads.length;
     const sales = leads.filter(l => l.status === "Sotib oldi").length;
@@ -74,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     const newReport: ReportData = {
       id: Math.random().toString(36).substring(7),
-      type: reportType as any,
+      type: reportType as ReportData["type"],
       title,
       subtitle: `${startDate.toLocaleDateString("uz-UZ")} – ${endDate.toLocaleDateString("uz-UZ")}`,
       company_id,
@@ -105,29 +110,27 @@ export async function POST(request: NextRequest) {
     saveReports(reports);
 
     // Send Telegram Notification to all connected admins/managers
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     if (BOT_TOKEN) {
-       const { getTeamMembers } = require("@/lib/data-store");
-       const team = getTeamMembers();
-       let chatIds: string[] = [];
+       const teamMembers = getTeamMembers();
+       const chatIds = new Set<string>();
        // Add local chat ids
-       team.forEach((m: any) => {
-          if (m.chat_id && !chatIds.includes(m.chat_id)) chatIds.push(m.chat_id);
+       teamMembers.forEach((m: { chat_id: string | null }) => {
+          if (m.chat_id) chatIds.add(m.chat_id);
        });
        
        // Try fetching all chat_ids from Supabase if configured
        try {
-         const { createClient } = require('@supabase/supabase-js');
          if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
             const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
             const { data } = await supabase.from("profiles").select("telegram_chat_id").not("telegram_chat_id", "is", null);
             if (data) {
-               data.forEach((p: any) => {
-                  if (p.telegram_chat_id && !chatIds.includes(p.telegram_chat_id)) chatIds.push(p.telegram_chat_id);
+               data.forEach((p: { telegram_chat_id: string | null }) => {
+                  if (p.telegram_chat_id) chatIds.add(p.telegram_chat_id);
                });
             }
          }
-       } catch(e) {}
+       } catch {}
        
        const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
        const reportUrl = `${APP_URL}/reports/share/${newReport.share_token}`;
@@ -141,24 +144,31 @@ export async function POST(request: NextRequest) {
 
 Maketni yuklab oling yoki ko'ring:\n🔗 ${reportUrl}`;
 
-       for (const cid of chatIds) {
-          await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
-          }).catch(() => {});
+       // ⚡ Bolt: Parallelize Telegram notification requests using Promise.allSettled
+       // Eliminates O(N) sequential HTTP latency round-trips
+       if (chatIds.size > 0) {
+          await Promise.allSettled(
+            Array.from(chatIds).map(cid =>
+              fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ chat_id: cid, text: message, parse_mode: "HTML" })
+              })
+            )
+          );
        }
     }
 
     return NextResponse.json({ success: true, report: newReport });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Internal server error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+  // ⚡ Bolt: Use request.nextUrl.searchParams to avoid URL constructor overhead
+  const id = request.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID yuborilmadi" }, { status: 400 });
 
   let reports = getReports();
