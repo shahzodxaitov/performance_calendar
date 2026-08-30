@@ -3,19 +3,23 @@
 import { Search, Bell, ChevronDown, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { usePathname } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 export function Header() {
   const { user, role } = useAuth();
   const { companies, selectedCompany, setSelectedCompany } = useCompany();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
+
+  // ⚡ Bolt Optimization: Memoize avatar initials calculation to avoid unnecessary string allocations on every re-render
+  const userInitials = useMemo(() => {
+    const fullName = user?.user_metadata?.full_name;
+    return fullName ? fullName.substring(0, 2).toUpperCase() : "PG";
+  }, [user?.user_metadata?.full_name]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -122,14 +126,14 @@ export function Header() {
                 <div className="p-3 hover:bg-white/[0.02] transition-colors cursor-pointer opacity-70">
                   <div className="pl-3">
                     <p className="text-[12px] font-medium text-white mb-1">✅ Vazifa yakunlandi</p>
-                    <p className="text-[11px] text-[#86868b] line-clamp-1">"Umra Paket Video" vazifasi muvaffaqiyatli topshirildi.</p>
+                    <p className="text-[11px] text-[#86868b] line-clamp-1">&quot;Umra Paket Video&quot; vazifasi muvaffaqiyatli topshirildi.</p>
                     <p className="text-[10px] text-[#48484a] mt-2">2 soat oldin</p>
                   </div>
                 </div>
               </div>
               <div className="p-2 border-t border-white/[0.06] text-center filter bg-black/20">
                 <button className="text-[11px] font-medium text-[var(--accent-blue)] hover:text-white transition-colors">
-                  Barchasini o'qilgan deb belgilash
+                  Barchasini o&apos;qilgan deb belgilash
                 </button>
               </div>
             </div>
@@ -138,7 +142,7 @@ export function Header() {
 
         <div className="flex items-center gap-3 pl-4 border-l border-white/[0.06]">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent-blue)] to-[var(--accent-purple)] flex items-center justify-center text-[11px] font-bold text-white shadow-md">
-            {user?.user_metadata?.full_name?.substring(0, 2).toUpperCase() || "PG"}
+            {userInitials}
           </div>
           <div className="hidden md:block">
             <div className="text-[13px] font-medium text-white leading-tight">
