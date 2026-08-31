@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { FileBarChart, Calendar, TrendingUp, Send, Plus, ArrowUpRight, ArrowDownRight, ChevronRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCompany } from "@/context/CompanyContext";
@@ -21,28 +21,29 @@ export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportType>("daily");
   const { selectedCompany, isAll, companies } = useCompany();
   const [fbAds, setFbAds] = useState({ spend: 0, cpc: 0, status: "not_connected" });
-  const [reportsList, setReportsList] = useState<any[]>([]);
+  const [reportsList, setReportsList] = useState<ReportData[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchReports = async () => {
-    setLoading(true);
-    try {
-      const url = isAll ? "/api/reports" : `/api/reports?company_id=${selectedCompany.id}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success) {
-        setReportsList(data.reports);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchReports();
+    let isMounted = true;
+
+    const url = isAll ? "/api/reports" : `/api/reports?company_id=${selectedCompany.id}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && data.success) {
+          setReportsList(data.reports);
+        }
+      })
+      .catch(console.error)
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedCompany.id, isAll]);
 
   useEffect(() => {
@@ -52,7 +53,8 @@ export default function ReportsPage() {
       .catch(() => {});
   }, [selectedCompany.id, activeTab]);
 
-  const filtered = reportsList.filter(r => r.type === activeTab);
+  // ⚡ Bolt: Memoize reports filtering to avoid recalculating filtered list and allocating new arrays on unrelated state/prop re-renders
+  const filtered = useMemo(() => reportsList.filter(r => r.type === activeTab), [reportsList, activeTab]);
 
   const copyLink = (token: string) => {
     navigator.clipboard.writeText(`${window.location.origin}/reports/share/${token}`);
@@ -69,7 +71,7 @@ export default function ReportsPage() {
       } else {
         alert(data.error);
       }
-    } catch (err) {
+    } catch {
       alert("O'chirishda xatolik yuz berdi");
     }
   };
@@ -145,7 +147,7 @@ export default function ReportsPage() {
                     <Send className="w-3.5 h-3.5" /> Telegram
                   </button>
                   <Link href={`/reports/share/${report.share_token}`} className="btn-secondary text-[12px] py-2 px-4">
-                    Ko'rish <ChevronRight className="w-3.5 h-3.5" />
+                    Ko&apos;rish <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
