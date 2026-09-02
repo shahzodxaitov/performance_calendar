@@ -1,0 +1,3 @@
+## 2026-03-30 - Avoid memoizing small static structures without computational cost
+**Learning:** Wrapping trivial arrays or static structures (like 4 KPI card objects) in `useMemo` when there is no expensive computation adds React hook overhead without measurable performance gains. Additionally, verify that mock data values (such as percentage breakdowns) remain mathematically accurate when refactoring static display arrays.
+**Action:** Reserve `useMemo` strictly for expensive array operations, sorting, or filtering across large datasets, and verify data consistency when modifying mock arrays.
