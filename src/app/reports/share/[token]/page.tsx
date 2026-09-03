@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Users, DollarSign, CheckCircle2, BarChart3, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
+import { ReportData } from "@/lib/data-store";
 
-const chartData = [
+// Static data hoisted outside component scope
+const CHART_DATA = [
   { name: "1", leads: 12, sales: 3 },
   { name: "2", leads: 18, sales: 5 },
   { name: "3", leads: 8, sales: 2 },
@@ -16,7 +18,7 @@ const chartData = [
   { name: "7", leads: 5, sales: 0 },
 ];
 
-const sourceData = [
+const SOURCE_DATA = [
   { name: "Instagram", value: 45, color: "#E1306C" },
   { name: "Telegram", value: 28, color: "#0088cc" },
   { name: "Google", value: 18, color: "#30d158" },
@@ -25,18 +27,47 @@ const sourceData = [
 
 export default function SharedReportPage() {
   const { token } = useParams<{ token: string }>();
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Safely fetch report with unmount protection
   useEffect(() => {
+    let isMounted = true;
     fetch(`/api/reports?token=${token}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) setReport(data.report);
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success) {
+          setReport(data.report);
+        }
       })
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
+
+  // ⚡ Bolt Optimization: Memoize stats card items to avoid array re-allocations on Recharts hover / component re-renders
+  const stats = useMemo(() => {
+    if (!report?.data) return [];
+    const { data } = report;
+    const completionPercentage = data.total > 0 ? Math.round((data.done / data.total) * 100) : 0;
+
+    return [
+      { label: "Jami Leadlar", value: data.leads, change: data.leads_ch, icon: Users, color: "#0071e3" },
+      { label: "Sotuvlar", value: data.sales, change: data.sales_ch, icon: DollarSign, color: "#30d158" },
+      { label: "Bajarilgan", value: `${data.done}/${data.total}`, change: `${completionPercentage}%`, icon: CheckCircle2, color: "#bf5af2" },
+      { label: "Konversiya", value: data.conversion || "0%", change: data.conversion_ch || "0%", icon: BarChart3, color: "#ff9f0a" },
+    ];
+  }, [report]);
+
+  const completionPercentage = useMemo(() => {
+    if (!report?.data) return 0;
+    return report.data.total > 0 ? Math.round((report.data.done / report.data.total) * 100) : 0;
+  }, [report]);
 
   if (loading) {
     return (
@@ -51,7 +82,7 @@ export default function SharedReportPage() {
       <div className="min-h-screen bg-black flex items-center justify-center text-[#f5f5f7]">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">Hisobot topilmadi</h1>
-          <p className="text-[#86868b]">Ushbu link noto'g'ri yoxud hisobot o'chirilgan.</p>
+          <p className="text-[#86868b]">Ushbu link noto&apos;g&apos;ri yoxud hisobot o&apos;chirilgan.</p>
         </div>
       </div>
     );
@@ -80,12 +111,7 @@ export default function SharedReportPage() {
       <main className="max-w-[900px] mx-auto px-8 py-10 space-y-10">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Jami Leadlar", value: data.leads, change: data.leads_ch, icon: Users, color: "#0071e3" },
-            { label: "Sotuvlar", value: data.sales, change: data.sales_ch, icon: DollarSign, color: "#30d158" },
-            { label: "Bajarilgan", value: `${data.done}/${data.total}`, change: `${Math.round(data.done/data.total*100)}%`, icon: CheckCircle2, color: "#bf5af2" },
-            { label: "Konversiya", value: data.conversion || "0%", change: data.conversion_ch || "0%", icon: BarChart3, color: "#ff9f0a" },
-          ].map((s, i) => (
+          {stats.map((s, i) => (
              <div key={i} className="rounded-2xl bg-[#1c1c1e]/80 border border-white/[0.06] p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-9 h-9 rounded-[10px] flex items-center justify-center" style={{ backgroundColor: `${s.color}15` }}>
@@ -93,7 +119,7 @@ export default function SharedReportPage() {
                 </div>
                 <span className={cn(
                   "text-[11px] font-semibold px-2 py-0.5 rounded-md flex items-center gap-0.5",
-                  s.change.startsWith("+") || s.change.endsWith("%") && parseFloat(s.change) > 50 
+                  s.change.startsWith("+") || (s.change.endsWith("%") && parseFloat(s.change) > 50)
                     ? "text-[#30d158] bg-[#30d158]/10" 
                     : s.change.startsWith("-") || s.change === "0%"
                       ? "text-[#ff453a] bg-[#ff453a]/10"
@@ -114,7 +140,7 @@ export default function SharedReportPage() {
           <h3 className="text-[17px] font-semibold text-white mb-6">Leadlar Dinamikasi</h3>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+              <AreaChart data={CHART_DATA}>
                 <defs>
                   <linearGradient id="shareGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#0071e3" stopOpacity={0.25} />
@@ -135,7 +161,7 @@ export default function SharedReportPage() {
         <div className="rounded-2xl bg-[#1c1c1e]/80 border border-white/[0.06] p-6">
           <h3 className="text-[17px] font-semibold text-white mb-6">Manbalar</h3>
           <div className="space-y-5">
-            {sourceData.map((src, i) => (
+            {SOURCE_DATA.map((src, i) => (
               <div key={i} className="space-y-2">
                 <div className="flex justify-between text-[12px] font-medium">
                   <span className="text-[#86868b]">{src.name}</span>
@@ -155,7 +181,7 @@ export default function SharedReportPage() {
           <div className="text-[14px] text-[#86868b] leading-[1.7] space-y-2">
             <p>Bu davrda <b className="text-white">{data.leads} ta lead</b> kelib tushdi (<span className={data.leads_ch.startsWith("+") ? "text-[#30d158]" : "text-[#ff453a]"}>{data.leads_ch}</span>).</p>
             <p>Asosiy manba — <b className="text-white">{data.source}</b>.</p>
-            <p>Jami <b className="text-white">{data.sales} UzS</b> sotuv amalga oshirildi. Rejadagi {data.total} ta vazifadan <b className="text-white">{data.done} tasi</b> bajarildi ({Math.round(data.done/data.total*100)}%).</p>
+            <p>Jami <b className="text-white">{data.sales} UzS</b> sotuv amalga oshirildi. Rejadagi {data.total} ta vazifadan <b className="text-white">{data.done} tasi</b> bajarildi ({completionPercentage}%).</p>
           </div>
         </div>
 
