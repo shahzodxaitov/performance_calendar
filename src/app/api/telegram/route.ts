@@ -4,11 +4,12 @@ import { getTeamMembers, saveTeamMembers, getCompanies } from "@/lib/data-store"
 
 export const dynamic = "force-dynamic";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://performance-calendar.vercel.app";
 
 // ===== TELEGRAM HELPERS =====
-async function sendMessage(chatId: number | string, text: string, reply_markup?: any) {
+async function sendMessage(chatId: number | string, text: string, reply_markup?: unknown) {
+  if (!BOT_TOKEN) return { ok: false, error: "TELEGRAM_BOT_TOKEN missing" };
   const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,6 +26,7 @@ async function sendMessage(chatId: number | string, text: string, reply_markup?:
 }
 
 async function answerCallback(callbackId: string, text?: string) {
+  if (!BOT_TOKEN) return;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -88,10 +90,9 @@ export async function POST(request: NextRequest) {
             getMainKeyboard()
           );
         } else {
-          const team2 = getTeamMembers();
           await sendMessage(chatId,
             `👋 <b>Xush kelibsiz, ${name}!</b>\n\nBu <b>Performance Agency</b> marketing platformasining botidir.\n\n🔑 <b>Sizning Chat ID:</b> <code>${chatId}</code>\n\n👇 O'zingizni ro'yxatdan o'tkating:`,
-            getTeamKeyboard(team2)
+            getTeamKeyboard(team)
           );
         }
       } else if (text === "/connect" || text === "/register") {
@@ -123,7 +124,6 @@ export async function POST(request: NextRequest) {
       const cb = update.callback_query;
       const chatId = cb.message?.chat?.id || cb.from?.id;
       const data = cb.data || "";
-      const name = cb.from?.first_name || "Foydalanuvchi";
 
       if (!chatId) return NextResponse.json({ ok: true });
       await answerCallback(cb.id);
@@ -139,16 +139,16 @@ export async function POST(request: NextRequest) {
       } else if (data.startsWith("reg_")) {
         const memberId = data.replace("reg_", "");
         const team = getTeamMembers();
-        const member = team.find((m) => m.id === memberId);
+        // ⚡ Bolt Optimization: Combine lookup and index retrieval into single pass
+        const idx = team.findIndex((m) => m.id === memberId);
 
-        if (!member) {
+        if (idx === -1) {
           await sendMessage(chatId, "❌ A'zo topilmadi.");
           return NextResponse.json({ ok: true });
         }
 
-        // chat_id ni yangilaymiz
-        const idx = team.findIndex((m) => m.id === memberId);
-        team[idx] = { ...team[idx], chat_id: String(chatId) };
+        const member = team[idx];
+        team[idx] = { ...member, chat_id: String(chatId) };
         saveTeamMembers(team);
 
         console.log(`✅ ${member.full_name} ulandi: chat_id=${chatId}`);
