@@ -2,8 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, CheckCircle2, XCircle, Trash2, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Plus, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 
 interface TeamMember {
   id: string;
@@ -11,6 +10,11 @@ interface TeamMember {
   role: string;
   chat_id: string | null;
   avatar_color: string;
+}
+
+// Hoist pure helper function outside component scope to prevent re-allocation on every render
+function getInitials(name: string) {
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
 }
 
 export default function TeamPage() {
@@ -25,18 +29,37 @@ export default function TeamPage() {
   const [addingLoading, setAddingLoading] = useState(false);
 
   const fetchTeam = useCallback(async () => {
-    setLoading(true);
     try {
       const res = await fetch(`/api/team?t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.team) setTeam(data.team);
     } catch {
       setTeam([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  useEffect(() => { fetchTeam(); }, [fetchTeam]);
+  useEffect(() => {
+    let isMounted = true;
+    const loadTeam = async () => {
+      try {
+        const res = await fetch(`/api/team?t=${Date.now()}`, { cache: "no-store" });
+        const data = await res.json();
+        if (isMounted) {
+          if (data.team) setTeam(data.team);
+        }
+      } catch {
+        if (isMounted) setTeam([]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    loadTeam();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,10 +106,6 @@ export default function TeamPage() {
     }
   };
 
-  function getInitials(name: string) {
-    return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
-  }
-
   return (
     <div className="space-y-8 animate-in max-w-5xl">
       {/* Header */}
@@ -99,7 +118,7 @@ export default function TeamPage() {
         </div>
         {role === "admin" && (
           <button onClick={() => setIsAdding(!isAdding)} className="btn-primary">
-            <Plus className="w-4 h-4" /> Yangi a'zo
+            <Plus className="w-4 h-4" /> Yangi a&apos;zo
           </button>
         )}
       </section>
@@ -107,10 +126,10 @@ export default function TeamPage() {
       {/* Add Form */}
       {isAdding && (
         <section className="glass-card p-6 animate-in slide-in-from-top-4">
-          <h3 className="text-[15px] font-semibold text-white mb-4">Yangi a'zo qo'shish</h3>
+          <h3 className="text-[15px] font-semibold text-white mb-4">Yangi a&apos;zo qo&apos;shish</h3>
           <form onSubmit={handleAdd} className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5 block">To'liq ism</label>
+              <label className="text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider mb-1.5 block">To&apos;liq ism</label>
               <input
                 required value={newName} onChange={e => setNewName(e.target.value)}
                 placeholder="Masalan: Sardor Rustamov"
@@ -129,7 +148,7 @@ export default function TeamPage() {
               </select>
             </div>
             <button type="submit" disabled={addingLoading} className="h-[42px] px-6 rounded-[12px] bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/80 text-white text-[13px] font-semibold transition-all">
-              {addingLoading ? "Qo'shilmoqda..." : "Saqlash"}
+              {addingLoading ? "Qo&apos;shilmoqda..." : "Saqlash"}
             </button>
           </form>
         </section>
@@ -140,7 +159,7 @@ export default function TeamPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/[0.06]">
-              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">A'zo</th>
+              <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">A&apos;zo</th>
               <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Rol</th>
               <th className="text-left px-5 py-3 text-[11px] font-semibold text-[var(--muted-foreground)] uppercase tracking-wider">Telegram Aloqasi</th>
               <th className="w-10"></th>
@@ -150,7 +169,7 @@ export default function TeamPage() {
             {loading ? (
               <tr><td colSpan={4} className="px-5 py-12 text-center text-[13px] text-[var(--muted-foreground)]">Yuklanmoqda...</td></tr>
             ) : team.length === 0 ? (
-              <tr><td colSpan={4} className="px-5 py-16 text-center text-[var(--muted-foreground)]">Jamoa a'zolari yo'q</td></tr>
+              <tr><td colSpan={4} className="px-5 py-16 text-center text-[var(--muted-foreground)]">Jamoa a&apos;zolari yo&apos;q</td></tr>
             ) : team.map((member) => (
               <tr key={member.id} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group">
                 <td className="px-5 py-4">
@@ -175,7 +194,7 @@ export default function TeamPage() {
                       </span>
                     ) : (
                       <span className="flex items-center gap-1.5 text-[12px] text-[var(--muted-foreground)]">
-                        <XCircle className="w-4 h-4 text-white/20" /> Yo'q
+                        <XCircle className="w-4 h-4 text-white/20" /> Yo&apos;q
                       </span>
                     )}
                     {role === "admin" && (
