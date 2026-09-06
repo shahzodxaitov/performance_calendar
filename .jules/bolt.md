@@ -1,0 +1,3 @@
+## 2025-05-18 - Parallelizing Telegram Notifications & O(1) Lookups in Task Reminders
+**Learning:** Sequential `await` calls on network API calls (like Telegram `sendMessage`) inside task processing loops introduce O(N * latency) delay overhead. Converting team lookups to an O(1) `Map` and parallelizing notifications via `Promise.allSettled` dramatically reduces endpoint response latency to O(max(latency)) while ensuring task flags are only updated on successful dispatch.
+**Action:** Always batch or parallelize external network/HTTP calls in background/cron endpoint loops with `Promise.allSettled`, and construct O(1) lookup maps when filtering or finding items across lists.
