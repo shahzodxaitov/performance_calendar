@@ -3,8 +3,27 @@ import { getCompanies } from "@/lib/data-store";
 
 export const dynamic = "force-dynamic";
 
+interface AmoCrmLead {
+  id: number;
+  status_id: number;
+  price?: number;
+  created_at: number;
+}
+
+interface ChartItem {
+  name: string;
+  leads: number;
+  sales: number;
+}
+
+// ⚡ Bolt: Hoisted static constants to avoid redundant heap allocations on every request and loop pass
+const WEEKDAYS = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
+const MONTHS = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+const QUALIFIED_STATUS_IDS = new Set([82159474, 82159478, 82159486]);
+
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt: Use Next.js native request.nextUrl.searchParams to avoid URL parsing overhead
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -21,7 +40,7 @@ export async function GET(request: NextRequest) {
     qualified_leads: 0,
     visits: 0,
     sales_amount: 0,
-    chart: [] as any[],
+    chart: [] as ChartItem[],
     status: "not_connected"
   };
 
@@ -34,7 +53,7 @@ export async function GET(request: NextRequest) {
     try {
       // Calculate timestamps based on period
       let startOfDay = 0;
-      let endOfDay = Math.floor(new Date().setHours(23, 59, 59, 999) / 1000);
+      const endOfDay = Math.floor(new Date().setHours(23, 59, 59, 999) / 1000);
       const now = new Date();
 
       if (period === "daily") {
@@ -56,9 +75,9 @@ export async function GET(request: NextRequest) {
 
       if (response.ok) {
         const data = await response.json();
-        const leads: any[] = data?._embedded?.leads || [];
+        const leads: AmoCrmLead[] = data?._embedded?.leads || [];
 
-        let totalLeads = leads.length;
+        const totalLeads = leads.length;
         let qualifiedLeads = 0, visits = 0, salesAmount = 0;
 
         // Chart yasash uchun strukturalash
@@ -71,35 +90,36 @@ export async function GET(request: NextRequest) {
         } else if (period === "monthly") {
            for(let i=1; i<=Math.min(now.getDate(), 31); i++) chartData[`${i}-kun`] = { leads: 0, sales: 0 };
         } else if (period === "yearly") {
-           ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"].forEach(d => chartData[d] = { leads: 0, sales: 0 });
+           MONTHS.forEach(d => chartData[d] = { leads: 0, sales: 0 });
         }
+
+        // ⚡ Bolt: Reusable Date instance to eliminate Date allocations inside the lead iteration loop (O(N) -> O(1) allocation)
+        const leadDate = new Date();
 
         leads.forEach(lead => {
           const status = lead.status_id;
-          if ([82159474, 82159478, 82159486].includes(status)) qualifiedLeads++;
+          if (QUALIFIED_STATUS_IDS.has(status)) qualifiedLeads++;
           if (status === 82159486) visits++;
           
           let isSale = false;
-          if (status === 142 || lead.price > 0) {
+          if (status === 142 || (lead.price && lead.price > 0)) {
             salesAmount += (lead.price || 0);
             isSale = true;
           }
 
-          // Chart guruhlash
-          const leadDate = new Date(lead.created_at * 1000);
+          // ⚡ Bolt: Update time on single reused Date instance
+          leadDate.setTime(lead.created_at * 1000);
           let key = "";
           if (period === "daily") {
             const hour = leadDate.getHours();
             const bucket = hour % 2 === 0 ? hour : hour - 1; 
             key = `${bucket < 10 ? '0'+bucket : bucket}:00`;
           } else if (period === "weekly") {
-            const arr = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
-            key = arr[leadDate.getDay()];
+            key = WEEKDAYS[leadDate.getDay()];
           } else if (period === "monthly") {
             key = `${leadDate.getDate()}-kun`;
           } else if (period === "yearly") {
-            const arr = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
-            key = arr[leadDate.getMonth()];
+            key = MONTHS[leadDate.getMonth()];
           }
           
           if (chartData[key] !== undefined) {
@@ -109,7 +129,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Convert object to array for Recharts
-        const chartArray = Object.keys(chartData).map(k => ({
+        const chartArray: ChartItem[] = Object.keys(chartData).map(k => ({
            name: k,
            leads: chartData[k].leads,
            sales: chartData[k].sales
@@ -127,7 +147,7 @@ export async function GET(request: NextRequest) {
         // Fallback to mock if token expired or invalid
         stats.status = "error_fetching";
       }
-    } catch (e) {
+    } catch {
       stats.status = "error_fetching";
     }
   } else {
