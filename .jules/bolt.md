@@ -1,0 +1,3 @@
+## 2026-03-25 - AmoCRM Stats API Route Allocation & Lookup Optimization
+**Learning:** `src/app/api/amocrm/stats/route.ts` previously allocated a new `Date` instance for every lead item inside `leads.forEach()`, created short-lived arrays (`["Dush", "Sesh", ...]` and `["Yan", ...])` on every iteration pass, and parsed request URLs using `new URL(request.url)`. Hoisting static array lookups to top-level constants and reusing a single mutable `Date` instance via `.setTime()` reduces GC overhead and memory allocations from O(N) to O(1) during CRM lead stats processing.
+**Action:** Always hoist static lookup arrays and reuse mutable `Date` instances with `.setTime()` when iterating over high-cardinality time series datasets in Next.js API routes.
