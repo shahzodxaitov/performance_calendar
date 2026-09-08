@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Upload, X, FileImage, Check } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MediaUploadProps {
@@ -20,26 +20,30 @@ export function MediaUpload({ onUploadComplete, existingUrls = [] }: MediaUpload
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      const newUrls = [...urls];
+      // Bolt: Parallelize media file uploads using Promise.all
+      // Replaces sequential O(N) network uploads with concurrent execution,
+      // reducing total upload time for N files from N * T to ~1 * T.
+      const uploadedUrls = await Promise.all(
+        Array.from(files).map(async (file) => {
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `tasks/${fileName}`;
 
-      for (const file of Array.from(files)) {
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `tasks/${fileName}`;
+          const { error: uploadError } = await supabase.storage
+            .from("smm-assets")
+            .upload(filePath, file);
 
-        const { error: uploadError } = await supabase.storage
-          .from("smm-assets")
-          .upload(filePath, file);
+          if (uploadError) throw uploadError;
 
-        if (uploadError) throw uploadError;
+          const { data: { publicUrl } } = supabase.storage
+            .from("smm-assets")
+            .getPublicUrl(filePath);
 
-        const { data: { publicUrl } } = supabase.storage
-          .from("smm-assets")
-          .getPublicUrl(filePath);
+          return publicUrl;
+        })
+      );
 
-        newUrls.push(publicUrl);
-      }
-
+      const newUrls = [...urls, ...uploadedUrls];
       setUrls(newUrls);
       onUploadComplete(newUrls);
     } catch (error) {
