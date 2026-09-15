@@ -1,57 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { TrendingUp, Users, Target, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { TrendingUp, Users, Target, DollarSign, ArrowUpRight, ArrowDownRight, LucideIcon } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useCompany } from "@/context/CompanyContext";
 import { cn } from "@/lib/utils";
 
-const crmByCompany: Record<string, {
-  stats: { title: string; value: string; change: string; trend: string; icon: any; color: string }[];
-  chart: { name: string; leads: number; sales: number }[];
-  leads: { name: string; source: string; status: string; time: string }[];
-}> = {
-  all: {
-    stats: [
-      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
-    ],
-    chart: [],
-    leads: [],
-  },
-  c1: {
-    stats: [
-      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
-    ],
-    chart: [],
-    leads: [],
-  },
-  c2: {
-    stats: [
-      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
-    ],
-    chart: [],
-    leads: [],
-  },
-  c3: {
-    stats: [
-      { title: "Jami Leadlar", value: "0", change: "0%", trend: "up", icon: Users, color: "#0071e3" },
-      { title: "Yangi Leadlar", value: "0", change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
-      { title: "Sotuvlar", value: "0 UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" },
-      { title: "Konversiya", value: "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
-    ],
-    chart: [],
-    leads: [],
-  },
-};
+const PERIOD_OPTIONS = [
+  { id: "daily", label: "Bugun" },
+  { id: "weekly", label: "Hafta" },
+  { id: "monthly", label: "Oy" },
+  { id: "yearly", label: "Yil" }
+] as const;
 
 const statusStyles: Record<string, { label: string; color: string }> = {
   "Yangi": { label: "Yangi", color: "var(--accent-blue)" },
@@ -68,10 +28,22 @@ interface Lead {
   created_at: string;
 }
 
+interface DisplayStat {
+  title: string;
+  value: string;
+  change: string;
+  trend: "up" | "down";
+  icon: LucideIcon;
+  color: string;
+}
+
+// Pure helper function hoisted outside component scope
+function getInitials(name: string): string {
+  return name.split(" ").map(n => n[0]).join("");
+}
+
 export default function CRMPage() {
   const { selectedCompany, isAll } = useCompany();
-  // Using hardcoded zeroed data as a base/skeleton
-  const fallbackData = crmByCompany[selectedCompany.id] || crmByCompany.all;
   
   const [period, setPeriod] = useState("daily");
   const [fbAds, setFbAds] = useState({ spend: 0, cpc: 0, status: "not_connected" });
@@ -85,33 +57,43 @@ export default function CRMPage() {
     status: "loading"
   });
 
+  // Guard async state updates with isMounted cleanup flag
   useEffect(() => {
+    let isMounted = true;
+
     fetch(`/api/facebook/spend?company_id=${selectedCompany.id}&period=${period}`)
       .then(res => res.json())
-      .then(d => setFbAds(d))
+      .then(d => { if (isMounted) setFbAds(d); })
       .catch(() => {});
 
     fetch(`/api/leads?company_id=${selectedCompany.id}&period=${period}`)
       .then(res => res.json())
-      .then(d => setRealLeads(d))
+      .then(d => { if (isMounted) setRealLeads(d); })
       .catch(() => {});
 
     fetch(`/api/amocrm/stats?company_id=${selectedCompany.id}&period=${period}`)
       .then(res => res.json())
-      .then(d => setAmoStats(d))
+      .then(d => { if (isMounted) setAmoStats(d); })
       .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedCompany.id, period]);
 
-  // AmoCRM display stats configuration
-  const displayStats = [
+  // Memoize AmoCRM display stats configuration to avoid recalculations on re-renders (e.g. Recharts tooltips)
+  const displayStats = useMemo<DisplayStat[]>(() => [
     { title: "Jami Leadlar", value: amoStats.total_leads.toString(), change: "0%", trend: "up", icon: Users, color: "#0071e3" },
     { title: "Sifatli Leadlar", value: amoStats.qualified_leads.toString(), change: "0%", trend: "up", icon: Target, color: "#bf5af2" },
     { title: "Sifatli Konversiya", value: amoStats.total_leads > 0 ? Math.round((amoStats.qualified_leads / amoStats.total_leads) * 100) + "%" : "0%", change: "0%", trend: "up", icon: TrendingUp, color: "#34c759" },
     { title: "Uchrashuv (Visit)", value: amoStats.visits.toString(), change: "0%", trend: "up", icon: TrendingUp, color: "#ff9f0a" },
     { title: "Sotuvlar", value: amoStats.sales_amount > 1000000 ? (amoStats.sales_amount / 1000000).toFixed(1) + "M" : amoStats.sales_amount.toLocaleString() + " UzS", change: "0%", trend: "up", icon: DollarSign, color: "#30d158" }
-  ];
+  ], [amoStats]);
 
-  const newLeadsCount = realLeads.filter(l => l.status === "Yangi").length;
+  // Memoize new leads count filtering calculation
+  const newLeadsCount = useMemo(() => {
+    return realLeads.filter(l => l.status === "Yangi").length;
+  }, [realLeads]);
 
   return (
     <div className="space-y-8 animate-in">
@@ -126,12 +108,7 @@ export default function CRMPage() {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex bg-white/[0.04] p-1 rounded-lg">
-            {[ 
-              { id: "daily", label: "Bugun" }, 
-              { id: "weekly", label: "Hafta" }, 
-              { id: "monthly", label: "Oy" }, 
-              { id: "yearly", label: "Yil" } 
-            ].map(p => (
+            {PERIOD_OPTIONS.map(p => (
               <button
                 key={p.id}
                 onClick={() => setPeriod(p.id)}
@@ -228,12 +205,12 @@ export default function CRMPage() {
         </section>
 
         <section className="lg:col-span-2 glass-card p-6">
-          <h2 className="text-[17px] font-semibold text-white mb-6">So'nggi Leadlar</h2>
+          <h2 className="text-[17px] font-semibold text-white mb-6">So&apos;nggi Leadlar</h2>
           <div className="space-y-1">
             {realLeads.length > 0 ? realLeads.map((lead, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-[14px] hover:bg-white/[0.04] transition-colors cursor-pointer group">
                 <div className="w-9 h-9 rounded-full bg-white/[0.06] flex items-center justify-center text-[12px] font-semibold text-white shrink-0">
-                  {lead.name.split(" ").map(n => n[0]).join("")}
+                  {getInitials(lead.name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-[13px] font-medium text-white truncate">{lead.name}</div>
