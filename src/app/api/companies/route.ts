@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     saveCompanies(companies);
 
     return NextResponse.json({ company: newCompany });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Xatolik" }, { status: 500 });
   }
 }
@@ -51,15 +51,15 @@ export async function PATCH(request: NextRequest) {
 
     saveCompanies(companies);
     return NextResponse.json({ company: companies[idx] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Xatolik" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    // ⚡ Bolt: Use pre-parsed request.nextUrl.searchParams to avoid URL constructor overhead
+    const id = request.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Id kerak" }, { status: 400 });
 
     let companies = getCompanies();
@@ -67,7 +67,7 @@ export async function DELETE(request: NextRequest) {
     saveCompanies(companies);
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Xatolik" }, { status: 500 });
   }
 }
