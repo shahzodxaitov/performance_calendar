@@ -123,16 +123,16 @@ function loadFromDisk(): AppData {
   return getDefaultData();
 }
 
-function tryWriteToDisk(data: AppData) {
-  // Agar fayl tizimga yoza olsak — yozamiz (localhost uchun)
-  // Vercel'da silently fail bo'ladi
+// ⚡ Bolt: Non-blocking asynchronous disk persistence with compact JSON serialization
+// Prevents synchronous I/O event-loop blocking and reduces heap string allocation overhead during state updates.
+async function tryWriteToDisk(data: AppData): Promise<void> {
   try {
     const dbPath = path.join(process.cwd(), "data", "db.json");
     const dir = path.dirname(dbPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf-8");
+    await fs.promises.mkdir(dir, { recursive: true });
+    await fs.promises.writeFile(dbPath, JSON.stringify(data), "utf-8");
   } catch {
-    // Vercel'da bu xatolik — normal holat, skip qilamiz
+    // Vercel serverless environment (read-only filesystem) — skip silently
   }
 }
 
@@ -145,7 +145,7 @@ export function readDb(): AppData {
 
 export function writeDb(data: AppData) {
   memoryDb = data;
-  tryWriteToDisk(data);
+  tryWriteToDisk(data).catch(() => {});
 }
 
 export function getTeamMembers() { return readDb().team; }
