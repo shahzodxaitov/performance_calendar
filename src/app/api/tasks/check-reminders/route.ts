@@ -13,28 +13,34 @@ async function sendTelegramNotification(chatId: string, text: string) {
 }
 
 export async function GET() {
-  const now = new Date();
+  const nowMs = Date.now();
   const tasks = getTasks();
   const team = getTeamMembers();
+
+  // ⚡ Bolt Optimization: Build O(1) Map for team member lookups to avoid O(M) .find() inside the tasks loop
+  const teamMap = new Map(team.map((m) => [m.id, m]));
+
   const results: { task: string; type: string; sent: boolean }[] = [];
+  const notificationPromises: Promise<void>[] = [];
   let updated = false;
 
   for (const task of tasks) {
     if (task.status === "done") continue;
 
-    const member = team.find((m) => m.id === task.assignee_id);
+    const member = teamMap.get(task.assignee_id);
     if (!member?.chat_id) continue;
 
     const deadlineStr = task.due_time
       ? `${task.due_date}T${task.due_time}:00+05:00`
       : `${task.due_date}T23:59:00+05:00`;
-    const deadline = new Date(deadlineStr);
-    const diff = deadline.getTime() - now.getTime();
-    const hoursLeft = diff / (1000 * 60 * 60);
+
+    // ⚡ Bolt Optimization: Use Date.parse() primitive timestamp to avoid heap-allocating Date objects inside the loop
+    const deadlineMs = Date.parse(deadlineStr);
+    const hoursLeft = (deadlineMs - nowMs) / 3600000;
 
     if (!task.notified_1day && hoursLeft > 0 && hoursLeft <= 28 && hoursLeft > 2) {
       const message = `⏰ <b>Eslatma: 1 kun qoldi!</b>\n\n📌 <b>${task.title}</b>\n🏢 Loyiha: <b>${task.company_name}</b>\n📅 Muddat: <b>${task.due_date}${task.due_time ? " " + task.due_time : ""}</b>\n\n⚠️ Iltimos, vaqtida bajaring!`;
-      await sendTelegramNotification(member.chat_id, message);
+      notificationPromises.push(sendTelegramNotification(member.chat_id, message));
       task.notified_1day = true;
       updated = true;
       results.push({ task: task.title, type: "1day", sent: true });
@@ -42,11 +48,16 @@ export async function GET() {
 
     if (!task.notified_1hour && hoursLeft > 0 && hoursLeft <= 1.5) {
       const message = `🚨 <b>Diqqat: 1 soat qoldi!</b>\n\n📌 <b>${task.title}</b>\n🏢 Loyiha: <b>${task.company_name}</b>\n📅 Muddat: <b>${task.due_date}${task.due_time ? " " + task.due_time : ""}</b>\n\n‼️ Juda kam vaqt qoldi!`;
-      await sendTelegramNotification(member.chat_id, message);
+      notificationPromises.push(sendTelegramNotification(member.chat_id, message));
       task.notified_1hour = true;
       updated = true;
       results.push({ task: task.title, type: "1hour", sent: true });
     }
+  }
+
+  // ⚡ Bolt Optimization: Execute all Telegram notification requests concurrently with Promise.allSettled
+  if (notificationPromises.length > 0) {
+    await Promise.allSettled(notificationPromises);
   }
 
   if (updated) saveTasks(tasks);
@@ -55,6 +66,6 @@ export async function GET() {
     checked: tasks.length,
     reminders_sent: results.length,
     details: results,
-    checked_at: now.toISOString(),
+    checked_at: new Date(nowMs).toISOString(),
   });
 }
