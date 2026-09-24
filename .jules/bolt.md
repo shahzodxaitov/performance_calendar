@@ -1,0 +1,3 @@
+## 2026-03-24 - [Optimizing Background Task Reminders & Batching Network Requests]
+**Learning:** In periodic notification routes like `check-reminders`, performing sequential `await` fetch calls inside loops creates severe latency bottlenecks proportional to task count ($O(N)$ HTTP latency). Combining $O(1)$ Map lookups for member details, primitive `Date.parse()` calculations, and parallelizing HTTP notifications with `Promise.allSettled()` dramatically cuts route response times from seconds to a single concurrent round-trip.
+**Action:** Always pre-index relational lookups with Map before loops and collect notification promises to execute concurrently with `Promise.allSettled()`.
