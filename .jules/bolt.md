@@ -1,0 +1,3 @@
+## 2025-05-18 - [Reports API Performance & Security Optimization]
+**Learning:** In Next.js API routes handling date-ranged filtering or array sorting, allocating `new Date()` instances inside `.filter()` loops or `.sort()` comparator callbacks creates substantial garbage collection overhead under heavy request loads. Storing date boundaries as primitive millisecond timestamps (`Date.parse()`) and performing numeric comparisons avoids O(N) date allocations.
+**Action:** Use primitive timestamp comparisons (`Date.parse()`) for date filtering and sorting in serverless API routes, use `request.nextUrl.searchParams`, and parallelize external notifications with `Promise.allSettled()`.
