@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 // GET /api/leads?company_id=...
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // ⚡ Bolt Optimization: Use Next.js native request.nextUrl.searchParams to avoid new URL() constructor overhead
+  const { searchParams } = request.nextUrl;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -15,23 +16,35 @@ export async function GET(request: NextRequest) {
     leads = leads.filter(l => l.company_id === companyId);
   }
 
+  // ⚡ Bolt Optimization: Calculate start boundary reusing single Date instance without extra allocations
   const now = new Date();
-  let startTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
+  let startTimestamp: number;
   
   if (period === "weekly") {
-      const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startTimestamp = new Date(new Date(now).setDate(diff)).setHours(0,0,0,0);
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    now.setDate(diff);
+    now.setHours(0, 0, 0, 0);
+    startTimestamp = now.getTime();
   } else if (period === "monthly") {
-      startTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    now.setDate(1);
+    now.setHours(0, 0, 0, 0);
+    startTimestamp = now.getTime();
   } else if (period === "yearly") {
-      startTimestamp = new Date(now.getFullYear(), 0, 1).getTime();
+    now.setMonth(0, 1);
+    now.setHours(0, 0, 0, 0);
+    startTimestamp = now.getTime();
+  } else {
+    // "daily" or default
+    now.setHours(0, 0, 0, 0);
+    startTimestamp = now.getTime();
   }
 
-  // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  // ⚡ Bolt Optimization: Use primitive Date.parse() instead of new Date().getTime() inside filter (saves O(N) Date allocations)
+  leads = leads.filter(l => Date.parse(l.created_at) >= startTimestamp);
 
-  // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // ⚡ Bolt Optimization: Direct ISO 8601 string comparison for sorting eliminates both Date allocations and string parsing in sort loop
+  leads.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   return NextResponse.json(leads);
 }
@@ -58,7 +71,7 @@ export async function PATCH(request: NextRequest) {
     saveLeads(leads);
     
     return NextResponse.json({ success: true, lead: leads[index] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });
   }
 }
