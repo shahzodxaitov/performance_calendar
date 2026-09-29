@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTasks, saveTasks, getTeamMembers, type LocalTask } from "@/lib/data-store";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
+// Bolt Optimization: Send Telegram notification asynchronously
 async function sendTelegramNotification(chatId: string, text: string) {
   if (!chatId || !BOT_TOKEN) return;
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -38,9 +40,9 @@ ${task.description ? `📝 ${task.description}\n` : ""}
 ${type === "new" ? "✅ Platformada batafsil ko'ring" : type === "1day" ? "⚠️ Iltimos, vaqtida bajaring!" : "‼️ Juda kam vaqt qoldi!"}`;
 }
 
+// Bolt Optimization: Use request.nextUrl.searchParams instead of constructing new URL(request.url)
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const companyId = searchParams.get("company_id") || "all";
+  const companyId = request.nextUrl.searchParams.get("company_id") || "all";
   let tasks = getTasks();
   if (companyId !== "all") {
     tasks = tasks.filter((t) => t.company_id === companyId);
@@ -61,18 +63,15 @@ export async function POST(request: NextRequest) {
     const member = team.find((m) => m.id === assignee_id);
     const assignee_name = member?.full_name || "Noma'lum";
 
-    // Agar Supabase dagi "profiles" ishlayotgan bo'lsa undan chat_id qidirish, bo'lmasa local JSON dan
+    // Bolt Optimization: Reuse top-level Supabase client singleton instead of dynamic require() inside request handler
     let finalChatId = member?.chat_id;
-    if (!finalChatId && assignee_id.includes("-")) { 
-       // Supabase IDlari odatda UUID (chiziqcha bilan) bo'ladi
-       try {
-         const { createClient } = require('@supabase/supabase-js');
-         if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-            const { data } = await supabase.from("profiles").select("telegram_chat_id").eq("id", assignee_id).single();
-            if (data?.telegram_chat_id) finalChatId = data.telegram_chat_id;
-         }
-       } catch (e) {}
+    if (!finalChatId && assignee_id.includes("-") && isSupabaseConfigured) {
+      try {
+        const { data } = await supabase.from("profiles").select("telegram_chat_id").eq("id", assignee_id).single();
+        if (data?.telegram_chat_id) finalChatId = data.telegram_chat_id;
+      } catch {
+        // Silently handle Supabase fetch error
+      }
     }
 
     const newTask: LocalTask = {
