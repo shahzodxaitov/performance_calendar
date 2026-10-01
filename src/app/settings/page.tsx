@@ -1,4 +1,4 @@
-import { TrendingUp, Settings, LogOut, MessageSquare } from "lucide-react";
+import { TelegramConnect } from "@/components/TelegramConnect";
 
 export default function SettingsPage() {
   return (
@@ -35,5 +35,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-import { TelegramConnect } from "@/components/TelegramConnect";
