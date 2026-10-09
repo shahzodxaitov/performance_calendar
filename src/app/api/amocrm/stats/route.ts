@@ -3,8 +3,27 @@ import { getCompanies } from "@/lib/data-store";
 
 export const dynamic = "force-dynamic";
 
+// Bolt: Hoist static lookup collections outside the handler to prevent re-allocation per API request
+const QUALIFIED_STATUS_SET = new Set([82159474, 82159478, 82159486]);
+const WEEKDAYS = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
+const MONTHS = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
+
+interface AmoCRMLead {
+  id: number;
+  status_id: number;
+  price?: number;
+  created_at: number;
+}
+
+interface ChartDataItem {
+  name: string;
+  leads: number;
+  sales: number;
+}
+
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // Bolt: Use request.nextUrl.searchParams to eliminate URL constructor overhead
+  const searchParams = request.nextUrl.searchParams;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -15,13 +34,12 @@ export async function GET(request: NextRequest) {
   const companies = getCompanies();
   const company = companies.find(c => c.id === companyId);
 
-  // Default o'rtacha mock qiymatlar
   let stats = {
     total_leads: 0,
     qualified_leads: 0,
     visits: 0,
     sales_amount: 0,
-    chart: [] as any[],
+    chart: [] as ChartDataItem[],
     status: "not_connected"
   };
 
@@ -32,20 +50,21 @@ export async function GET(request: NextRequest) {
 
   if (company && company.amocrm_domain && company.amocrm_access_token) {
     try {
-      // Calculate timestamps based on period
-      let startOfDay = 0;
-      let endOfDay = Math.floor(new Date().setHours(23, 59, 59, 999) / 1000);
       const now = new Date();
+      // Bolt: Reuse single Date instance calculation for boundaries
+      const endOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime() / 1000);
+      let startOfDay = 0;
 
       if (period === "daily") {
-         startOfDay = Math.floor(new Date(new Date().setHours(0,0,0,0)).getTime() / 1000);
+         startOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).getTime() / 1000);
       } else if (period === "weekly") {
-         const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-         startOfDay = Math.floor(new Date(now.setDate(diff)).setHours(0,0,0,0) / 1000);
+         const day = now.getDay();
+         const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+         startOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0).getTime() / 1000);
       } else if (period === "monthly") {
-         startOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000);
+         startOfDay = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime() / 1000);
       } else if (period === "yearly") {
-         startOfDay = Math.floor(new Date(now.getFullYear(), 0, 1).getTime() / 1000);
+         startOfDay = Math.floor(new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0).getTime() / 1000);
       }
 
       // Fetch up to 250 recent leads from amoCRM natively strictly for the active period
@@ -56,9 +75,9 @@ export async function GET(request: NextRequest) {
 
       if (response.ok) {
         const data = await response.json();
-        const leads: any[] = data?._embedded?.leads || [];
+        const leads: AmoCRMLead[] = data?._embedded?.leads || [];
 
-        let totalLeads = leads.length;
+        const totalLeads = leads.length;
         let qualifiedLeads = 0, visits = 0, salesAmount = 0;
 
         // Chart yasash uchun strukturalash
@@ -71,35 +90,36 @@ export async function GET(request: NextRequest) {
         } else if (period === "monthly") {
            for(let i=1; i<=Math.min(now.getDate(), 31); i++) chartData[`${i}-kun`] = { leads: 0, sales: 0 };
         } else if (period === "yearly") {
-           ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"].forEach(d => chartData[d] = { leads: 0, sales: 0 });
+           MONTHS.forEach(d => chartData[d] = { leads: 0, sales: 0 });
         }
+
+        // Bolt: Single reused Date object to avoid O(N) heap allocations in lead processing loop
+        const reusableDate = new Date();
 
         leads.forEach(lead => {
           const status = lead.status_id;
-          if ([82159474, 82159478, 82159486].includes(status)) qualifiedLeads++;
+          if (QUALIFIED_STATUS_SET.has(status)) qualifiedLeads++;
           if (status === 82159486) visits++;
           
           let isSale = false;
-          if (status === 142 || lead.price > 0) {
+          if (status === 142 || (lead.price && lead.price > 0)) {
             salesAmount += (lead.price || 0);
             isSale = true;
           }
 
-          // Chart guruhlash
-          const leadDate = new Date(lead.created_at * 1000);
+          // Chart guruhlash using reused Date object
+          reusableDate.setTime(lead.created_at * 1000);
           let key = "";
           if (period === "daily") {
-            const hour = leadDate.getHours();
+            const hour = reusableDate.getHours();
             const bucket = hour % 2 === 0 ? hour : hour - 1; 
             key = `${bucket < 10 ? '0'+bucket : bucket}:00`;
           } else if (period === "weekly") {
-            const arr = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
-            key = arr[leadDate.getDay()];
+            key = WEEKDAYS[reusableDate.getDay()];
           } else if (period === "monthly") {
-            key = `${leadDate.getDate()}-kun`;
+            key = `${reusableDate.getDate()}-kun`;
           } else if (period === "yearly") {
-            const arr = ["Yan", "Fev", "Mar", "Apr", "May", "Iyn", "Iyl", "Avg", "Sen", "Okt", "Noy", "Dek"];
-            key = arr[leadDate.getMonth()];
+            key = MONTHS[reusableDate.getMonth()];
           }
           
           if (chartData[key] !== undefined) {
@@ -109,7 +129,7 @@ export async function GET(request: NextRequest) {
         });
 
         // Convert object to array for Recharts
-        const chartArray = Object.keys(chartData).map(k => ({
+        const chartArray: ChartDataItem[] = Object.keys(chartData).map(k => ({
            name: k,
            leads: chartData[k].leads,
            sales: chartData[k].sales
@@ -127,7 +147,7 @@ export async function GET(request: NextRequest) {
         // Fallback to mock if token expired or invalid
         stats.status = "error_fetching";
       }
-    } catch (e) {
+    } catch {
       stats.status = "error_fetching";
     }
   } else {
