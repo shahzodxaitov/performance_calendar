@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCompany } from "@/context/CompanyContext";
@@ -38,9 +38,9 @@ export default function CalendarPage() {
   const { selectedCompany, isAll } = useCompany();
   const { role } = useAuth();
   
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
+  const today = useMemo(() => new Date(), []);
+  const [year, setYear] = useState(() => today.getFullYear());
+  const [month, setMonth] = useState(() => today.getMonth());
   const [tasks, setTasks] = useState<LocalTask[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -48,14 +48,22 @@ export default function CalendarPage() {
     try {
       const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}`);
       const data = await res.json();
-      if (data.tasks) setTasks(data.tasks);
+      return data.tasks || [];
     } catch {
-      setTasks([]);
+      return [];
     }
   }, [selectedCompany.id]);
 
   useEffect(() => {
-    fetchTasks();
+    let isMounted = true;
+    fetchTasks().then((taskList) => {
+      if (isMounted) {
+        setTasks(taskList);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [fetchTasks]);
 
   const daysInMonth = getDaysInMonth(year, month);
@@ -65,25 +73,38 @@ export default function CalendarPage() {
   const prev = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
   const next = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
 
-  const days = [];
-  for (let i = 0; i < firstDay; i++) days.push(null);
-  for (let d = 1; d <= daysInMonth; d++) days.push(d);
+  const days = useMemo(() => {
+    const list: (number | null)[] = [];
+    for (let i = 0; i < firstDay; i++) list.push(null);
+    for (let d = 1; d <= daysInMonth; d++) list.push(d);
+    return list;
+  }, [firstDay, daysInMonth]);
 
   // Group tasks by due_date
-  const eventsByDate = tasks.reduce((acc, task) => {
-    if (!task.due_date) return acc;
-    if (!acc[task.due_date]) acc[task.due_date] = [];
-    acc[task.due_date].push({
-      title: task.title,
-      assignee: task.assignee_name,
-      color: statusColors[task.status] || "var(--accent-blue)"
-    });
-    return acc;
-  }, {} as Record<string, { title: string; assignee: string; color: string }[]>);
+  const eventsByDate = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      if (!task.due_date) return acc;
+      if (!acc[task.due_date]) acc[task.due_date] = [];
+      acc[task.due_date].push({
+        title: task.title,
+        assignee: task.assignee_name,
+        color: statusColors[task.status] || "var(--accent-blue)"
+      });
+      return acc;
+    }, {} as Record<string, { title: string; assignee: string; color: string }[]>);
+  }, [tasks]);
 
   return (
     <div className="space-y-8 animate-in">
-      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      {isModalOpen && (
+        <TaskModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onTaskCreated={() => {
+            fetchTasks().then(setTasks);
+          }}
+        />
+      )}
 
       {/* Header */}
       <section className="flex items-end justify-between">
@@ -91,7 +112,7 @@ export default function CalendarPage() {
           <h1 className="text-[32px] font-semibold text-white tracking-tight">
             {isAll ? "Kalendar" : `${selectedCompany.name} Kalendari`}
           </h1>
-          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo'yicha belgilangan ishlar sanasi.</p>
+          <p className="text-[15px] text-[var(--muted-foreground)] mt-1">Loyiha bo&apos;yicha belgilangan ishlar sanasi.</p>
         </div>
         {(role === "admin" || role === "manager") && (
           <button onClick={() => setIsModalOpen(true)} className="btn-primary">
