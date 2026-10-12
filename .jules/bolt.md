@@ -1,0 +1,3 @@
+## 2026-03-24 - Parallelizing Notification Requests in Serverless Cron Handler
+**Learning:** A sequential `for...of` loop with `await fetch()` in serverless cron endpoints creates an O(N) network latency barrier (e.g., 20 notifications at 100ms each = 2000ms response time). Batching notification calls into parallel promises using `Promise.allSettled` cuts execution time down to max single-request latency (~100ms).
+**Action:** When handling bulk outbound webhook/notification calls in serverless API routes, collect payloads during array iteration and execute HTTP requests concurrently via `Promise.allSettled`.
