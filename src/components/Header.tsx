@@ -3,14 +3,12 @@
 import { Search, Bell, ChevronDown, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export function Header() {
   const { user, role } = useAuth();
   const { companies, selectedCompany, setSelectedCompany } = useCompany();
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   
@@ -122,14 +120,14 @@ export function Header() {
                 <div className="p-3 hover:bg-white/[0.02] transition-colors cursor-pointer opacity-70">
                   <div className="pl-3">
                     <p className="text-[12px] font-medium text-white mb-1">✅ Vazifa yakunlandi</p>
-                    <p className="text-[11px] text-[#86868b] line-clamp-1">"Umra Paket Video" vazifasi muvaffaqiyatli topshirildi.</p>
+                    <p className="text-[11px] text-[#86868b] line-clamp-1">&quot;Umra Paket Video&quot; vazifasi muvaffaqiyatli topshirildi.</p>
                     <p className="text-[10px] text-[#48484a] mt-2">2 soat oldin</p>
                   </div>
                 </div>
               </div>
               <div className="p-2 border-t border-white/[0.06] text-center filter bg-black/20">
                 <button className="text-[11px] font-medium text-[var(--accent-blue)] hover:text-white transition-colors">
-                  Barchasini o'qilgan deb belgilash
+                  Barchasini o&apos;qilgan deb belgilash
                 </button>
               </div>
             </div>

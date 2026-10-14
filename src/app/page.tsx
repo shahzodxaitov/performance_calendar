@@ -2,12 +2,21 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { CheckCircle2, Clock, AlertCircle, TrendingUp, ArrowUpRight, ArrowRight, BarChart3 } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, ArrowUpRight, ArrowRight, BarChart3, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+interface StatItem {
+  label: string;
+  value: string;
+  change: string;
+  icon: LucideIcon;
+  color: string;
+  bg: string;
+}
+
 const companyData: Record<string, {
-  stats: { label: string; value: string; change: string; icon: any; color: string; bg: string }[];
+  stats: StatItem[];
   crm: { leads: string; leads_ch: string; sales: string; sales_ch: string; topSource: string; topPct: string };
   tasks: { title: string; time: string; color: string }[];
 }> = {
@@ -65,7 +74,7 @@ export default function DashboardPage() {
           {isAll ? "Xush kelibsiz 👋" : selectedCompany.name}
         </h1>
         <p className="text-[13px] md:text-[15px] text-[var(--muted-foreground)] mt-1">
-          {isAll ? "Bugungi agentlik faoliyati qisqacha." : `${selectedCompany.name} loyihasi bo'yicha qisqacha.`}
+          {isAll ? "Bugungi agentlik faoliyati qisqacha." : `${selectedCompany.name} loyihasi bo&apos;yicha qisqacha.`}
         </p>
       </section>
 
@@ -147,7 +156,7 @@ export default function DashboardPage() {
               </div>
             )) : (
               <div className="text-[12px] text-center text-[var(--muted-foreground)] py-8 border border-dashed border-white/10 rounded-xl">
-                Yaqin orada bajarilishi kerak bo'lgan ishlar yo'q
+                Yaqin orada bajarilishi kerak bo&apos;lgan ishlar yo&apos;q
               </div>
             )}
           </div>
