@@ -58,8 +58,9 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    // ⚡ Bolt: Use NextRequest's built-in nextUrl.searchParams instead of constructing new URL(request.url)
+    // to avoid redundant string parsing and class instantiation overhead per API request.
+    const id = request.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Id kerak" }, { status: 400 });
 
     let companies = getCompanies();
