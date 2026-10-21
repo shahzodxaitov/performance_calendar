@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     saveTeamMembers(team);
 
     return NextResponse.json({ member: newMember });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Xatolik" }, { status: 500 });
   }
 }
@@ -57,7 +57,7 @@ export async function PATCH(request: NextRequest) {
     saveTeamMembers(team);
 
     return NextResponse.json({ member: team[idx] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Xatolik" }, { status: 500 });
   }
 }
@@ -65,16 +65,17 @@ export async function PATCH(request: NextRequest) {
 // DELETE - A'zoni o'chirish
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-      const id = searchParams.get("id");
-      if (!id) return NextResponse.json({ error: "Id kerak" }, { status: 400 });
+    // Bolt: Use request.nextUrl.searchParams instead of new URL(request.url) to avoid object allocation and re-parsing
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Id kerak" }, { status: 400 });
 
-      let team = getTeamMembers();
-      team = team.filter((m) => m.id !== id);
-      saveTeamMembers(team);
+    let team = getTeamMembers();
+    team = team.filter((m) => m.id !== id);
+    saveTeamMembers(team);
 
-      return NextResponse.json({ success: true });
-  } catch (error) {
-      return NextResponse.json({ error: "Xatolik" }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Xatolik" }, { status: 500 });
   }
 }
