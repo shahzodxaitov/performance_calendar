@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 
 export interface Company {
   id: string;
@@ -20,7 +20,7 @@ interface CompanyContextType {
   refreshCompanies: () => void;
 }
 
-const defaultCompany = { id: "all", name: "Barcha Loyihalar" };
+const defaultCompany: Company = { id: "all", name: "Barcha Loyihalar" };
 
 const CompanyContext = createContext<CompanyContextType>({
   companies: [defaultCompany],
@@ -34,7 +34,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [companies, setCompanies] = useState<Company[]>([defaultCompany]);
   const [selectedCompany, setSelectedCompany] = useState<Company>(defaultCompany);
 
-  const refreshCompanies = async () => {
+  // Memoize refreshCompanies callback to avoid unnecessary recreation
+  const refreshCompanies = useCallback(async () => {
     try {
       const res = await fetch("/api/companies");
       const data = await res.json();
@@ -44,16 +45,42 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error("Loyihalarni yuklashda xato:", err);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshCompanies();
+    let isMounted = true;
+    fetch("/api/companies")
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.companies) {
+          setCompanies([defaultCompany, ...data.companies]);
+        }
+      })
+      .catch((err) => {
+        console.error("Loyihalarni yuklashda xato:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const isAll = selectedCompany.id === "all";
 
+  // Memoize context value to prevent cascading re-renders across all consumer components
+  const value = useMemo(
+    () => ({
+      companies,
+      selectedCompany,
+      setSelectedCompany,
+      isAll,
+      refreshCompanies,
+    }),
+    [companies, selectedCompany, isAll, refreshCompanies]
+  );
+
   return (
-    <CompanyContext.Provider value={{ companies, selectedCompany, setSelectedCompany, isAll, refreshCompanies }}>
+    <CompanyContext.Provider value={value}>
       {children}
     </CompanyContext.Provider>
   );
