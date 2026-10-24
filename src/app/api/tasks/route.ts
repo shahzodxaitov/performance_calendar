@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTasks, saveTasks, getTeamMembers, type LocalTask } from "@/lib/data-store";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8748815281:AAGeIxoLPVLWJ0Zek4VZNoqYXI2IOzHIpmI";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 
 async function sendTelegramNotification(chatId: string, text: string) {
   if (!chatId || !BOT_TOKEN) return;
@@ -39,8 +40,7 @@ ${type === "new" ? "✅ Platformada batafsil ko'ring" : type === "1day" ? "⚠�
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const companyId = searchParams.get("company_id") || "all";
+  const companyId = request.nextUrl.searchParams.get("company_id") || "all";
   let tasks = getTasks();
   if (companyId !== "all") {
     tasks = tasks.filter((t) => t.company_id === companyId);
@@ -63,16 +63,14 @@ export async function POST(request: NextRequest) {
 
     // Agar Supabase dagi "profiles" ishlayotgan bo'lsa undan chat_id qidirish, bo'lmasa local JSON dan
     let finalChatId = member?.chat_id;
-    if (!finalChatId && assignee_id.includes("-")) { 
+    if (!finalChatId && assignee_id.includes("-") && isSupabaseConfigured) {
        // Supabase IDlari odatda UUID (chiziqcha bilan) bo'ladi
        try {
-         const { createClient } = require('@supabase/supabase-js');
-         if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-            const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-            const { data } = await supabase.from("profiles").select("telegram_chat_id").eq("id", assignee_id).single();
-            if (data?.telegram_chat_id) finalChatId = data.telegram_chat_id;
-         }
-       } catch (e) {}
+         const { data } = await supabase.from("profiles").select("telegram_chat_id").eq("id", assignee_id).single();
+         if (data?.telegram_chat_id) finalChatId = data.telegram_chat_id;
+       } catch {
+         // Fallback if profile lookup fails
+       }
     }
 
     const newTask: LocalTask = {
