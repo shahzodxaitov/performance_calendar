@@ -2,12 +2,11 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useCompany } from "@/context/CompanyContext";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, ComponentType } from "react";
 import { Plus, Search, Clock, AlertCircle, CheckCircle2, MoreHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { TaskModal } from "@/components/TaskModal";
 
-const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+const statusConfig: Record<string, { label: string; color: string; icon: ComponentType<{ className?: string }> }> = {
   todo: { label: "Kutishda", color: "var(--muted-foreground)", icon: Clock },
   in_progress: { label: "Jarayonda", color: "var(--accent-blue)", icon: Clock },
   review: { label: "Tekshiruv", color: "var(--accent-orange)", icon: AlertCircle },
@@ -32,6 +31,12 @@ interface LocalTask {
   due_time?: string;
 }
 
+// Hoist getInitials helper outside component scope to prevent function re-creations
+function getInitials(name: string): string {
+  if (!name) return "?";
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
+}
+
 export default function TasksPage() {
   const { role } = useAuth();
   const { selectedCompany, isAll } = useCompany();
@@ -40,8 +45,7 @@ export default function TasksPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const fetchTasks = useCallback(async () => {
-    setLoading(true);
+  const refetchTasks = useCallback(async () => {
     try {
       const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}&t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
@@ -49,23 +53,47 @@ export default function TasksPage() {
     } catch {
       setTasks([]);
     }
-    setLoading(false);
   }, [selectedCompany.id]);
 
-  useEffect(() => { fetchTasks(); }, [fetchTasks]);
+  useEffect(() => {
+    let isMounted = true;
+    async function loadTasks() {
+      try {
+        const res = await fetch(`/api/tasks?company_id=${selectedCompany.id}&t=${Date.now()}`, { cache: "no-store" });
+        const data = await res.json();
+        if (isMounted) {
+          if (data.tasks) setTasks(data.tasks);
+          setLoading(false);
+        }
+      } catch {
+        if (isMounted) {
+          setTasks([]);
+          setLoading(false);
+        }
+      }
+    }
+    loadTasks();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCompany.id]);
 
-  function getInitials(name: string) {
-    if (!name) return "?";
-    return name.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
-  }
-
-  const filtered = search
-    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()) || t.assignee_name.toLowerCase().includes(search.toLowerCase()))
-    : tasks;
+  // Memoize filtered task list and hoist search term normalization outside filter loop
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return tasks;
+    return tasks.filter((t) =>
+      t.title.toLowerCase().includes(term) ||
+      t.assignee_name.toLowerCase().includes(term)
+    );
+  }, [tasks, search]);
 
   return (
     <div className="space-y-8 animate-in">
-      <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={fetchTasks} />
+      {/* Conditionally render TaskModal only when open to prevent component tree mount overhead */}
+      {isModalOpen && (
+        <TaskModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTaskCreated={refetchTasks} />
+      )}
 
       {/* Header */}
       <section className="flex items-start justify-between gap-3">
@@ -157,7 +185,7 @@ export default function TasksPage() {
                   <div className="text-[var(--muted-foreground)]">
                     <div className="text-[40px] mb-3">📋</div>
                     <div className="text-[15px] font-medium text-white mb-1">Vazifalar topilmadi</div>
-                    <div className="text-[13px]">Yangi vazifa qo'shish uchun yuqoridagi tugmani bosing.</div>
+                    <div className="text-[13px]">Yangi vazifa qo&apos;shish uchun yuqoridagi tugmani bosing.</div>
                   </div>
                 </td>
               </tr>
