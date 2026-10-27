@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 
 // GET /api/leads?company_id=...
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  // Bolt optimization: Replaced `new URL(request.url)` with `request.nextUrl.searchParams`
+  const searchParams = request.nextUrl.searchParams;
   const companyId = searchParams.get("company_id");
   const period = searchParams.get("period") || "daily";
 
@@ -15,23 +16,26 @@ export async function GET(request: NextRequest) {
     leads = leads.filter(l => l.company_id === companyId);
   }
 
+  // Bolt optimization: Streamline period date boundary calculations with a single Date object
   const now = new Date();
-  let startTimestamp = new Date(new Date().setHours(0,0,0,0)).getTime();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let startTimestamp = startOfToday.getTime();
   
   if (period === "weekly") {
       const day = now.getDay(), diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      startTimestamp = new Date(new Date(now).setDate(diff)).setHours(0,0,0,0);
+      startOfToday.setDate(diff);
+      startTimestamp = startOfToday.getTime();
   } else if (period === "monthly") {
       startTimestamp = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   } else if (period === "yearly") {
       startTimestamp = new Date(now.getFullYear(), 0, 1).getTime();
   }
 
-  // Faqat joriy davrdagi leadlarni filtrlash
-  leads = leads.filter(l => new Date(l.created_at).getTime() >= startTimestamp);
+  // Bolt optimization: Replaced `new Date().getTime()` in filter with `Date.parse()` primitive timestamp comparison (eliminates O(N) Date allocations)
+  leads = leads.filter(l => Date.parse(l.created_at) >= startTimestamp);
 
-  // Sorter from newest to oldest
-  leads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  // Bolt optimization: Replaced `new Date().getTime()` in sort with `localeCompare()` on ISO 8601 strings (eliminates O(N log N) Date allocations)
+  leads.sort((a, b) => b.created_at.localeCompare(a.created_at));
 
   return NextResponse.json(leads);
 }
@@ -58,7 +62,7 @@ export async function PATCH(request: NextRequest) {
     saveLeads(leads);
     
     return NextResponse.json({ success: true, lead: leads[index] });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });
   }
 }
