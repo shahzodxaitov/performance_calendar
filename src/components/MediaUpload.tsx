@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Upload, X, FileImage, Check } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MediaUploadProps {
@@ -20,9 +20,9 @@ export function MediaUpload({ onUploadComplete, existingUrls = [] }: MediaUpload
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      const newUrls = [...urls];
-
-      for (const file of Array.from(files)) {
+      // ⚡ Bolt: Parallelize uploads using Promise.all to reduce latency
+      // from O(N) sequential HTTP round-trips to concurrent O(1) duration.
+      const uploadPromises = Array.from(files).map(async (file) => {
         const fileExt = file.name.split(".").pop();
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `tasks/${fileName}`;
@@ -37,8 +37,11 @@ export function MediaUpload({ onUploadComplete, existingUrls = [] }: MediaUpload
           .from("smm-assets")
           .getPublicUrl(filePath);
 
-        newUrls.push(publicUrl);
-      }
+        return publicUrl;
+      });
+
+      const uploadedUrls = await Promise.all(uploadPromises);
+      const newUrls = [...urls, ...uploadedUrls];
 
       setUrls(newUrls);
       onUploadComplete(newUrls);
